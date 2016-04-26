@@ -1,0 +1,5 @@
+build/
+dist/
+out/
+src/spacel_agent.egg-info/
+.coverage
