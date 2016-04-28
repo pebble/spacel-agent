@@ -1,4 +1,5 @@
 import logging
+import os
 
 from spacel.aws import AwsMeta, ClientCache, ElasticIpBinder
 from spacel.agent import FileWriter, SystemdUnits
@@ -22,6 +23,8 @@ def setup_logging():
 
 if __name__ == '__main__':
     setup_logging()
+    if not os.path.isdir('/files'):
+        os.mkdir('/files')
 
     # Get context:
     meta = AwsMeta()

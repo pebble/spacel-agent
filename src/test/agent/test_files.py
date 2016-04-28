@@ -24,7 +24,7 @@ class TestFileWriter(unittest.TestCase):
 Description=Test
 
 [Service]
-User=jenkins
+User=space
 TimeoutStartSec=0
 Restart=always
 StartLimitInterval=0
