@@ -3,6 +3,7 @@ from mock import MagicMock
 from spacel.model import AgentManifest
 from spacel.agent.systemd import SystemdUnits
 
+INSTANCE_ID = 'i-123456'
 SYSTEMD_SERVICE = 'foo.service'
 
 
@@ -12,7 +13,7 @@ class TestSystemdUnits(unittest.TestCase):
         self.unit.properties.Id = SYSTEMD_SERVICE
 
         self.manager = MagicMock()
-        self.manifest = AgentManifest({
+        self.manifest = AgentManifest(INSTANCE_ID, {
             'systemd': {
                 SYSTEMD_SERVICE: ''
             }

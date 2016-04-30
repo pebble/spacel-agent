@@ -8,15 +8,20 @@ REGION = 'us-east-1'
 
 class TestClientCache(unittest.TestCase):
     def setUp(self):
-        self.clients = ClientCache()
+        self.clients = ClientCache(REGION)
 
     @patch('spacel.aws.clients.boto3')
     def test_ec2(self, mock_boto3):
-        self.clients.ec2(REGION)
+        self.clients.ec2()
         mock_boto3.client.assert_called_once_with('ec2', REGION)
 
     @patch('spacel.aws.clients.boto3')
     def test_ec2_cached(self, mock_boto3):
-        self.clients._ec2[REGION] = True
-        self.clients.ec2(REGION)
-        mock_boto3.client.assert_not_called()
+        self.clients.ec2()
+        self.clients.ec2()
+        self.assertEqual(1, mock_boto3.client.call_count)
+
+    @patch('spacel.aws.clients.boto3')
+    def test_cloudformation(self, mock_boto3):
+        self.clients.cloudformation()
+        mock_boto3.client.assert_called_once_with('cloudformation', REGION)

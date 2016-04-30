@@ -1,18 +1,18 @@
-import unittest
-from mock import MagicMock
 from botocore.exceptions import ClientError
 
 from spacel.aws.eip import ElasticIpBinder
+from spacel.model import AgentManifest
+from test.aws import MockedClientTest, INSTANCE_ID
 
-INSTANCE_ID = 'i-123456'
 EIP_ID = 'eip-123456'
 EIPS = (EIP_ID, 'eip-654321')
 
 
-class TestEipBinder(unittest.TestCase):
+class TestEipBinder(MockedClientTest):
     def setUp(self):
-        self.ec2 = MagicMock()
-        self.eip = ElasticIpBinder(self.ec2, INSTANCE_ID)
+        super(TestEipBinder, self).setUp()
+        self.manifest.eips = EIPS
+        self.eip = ElasticIpBinder(self.clients)
 
     def test_assign_from_has_address(self):
         self._mock_addresses([{
@@ -21,7 +21,7 @@ class TestEipBinder(unittest.TestCase):
             'InstanceId': INSTANCE_ID
         }])
 
-        got_eip = self.eip.assign_from(EIPS)
+        got_eip = self.eip.assign_from(self.manifest)
         self.assertEqual(True, got_eip)
         self.ec2.associate_address.assert_not_called()
 
@@ -30,7 +30,7 @@ class TestEipBinder(unittest.TestCase):
             'AllocationId': EIP_ID
         }])
 
-        got_eip = self.eip.assign_from(EIPS)
+        got_eip = self.eip.assign_from(self.manifest)
         self.assertEqual(True, got_eip)
         self.ec2.associate_address.assert_called_with(
                 InstanceId=INSTANCE_ID,
@@ -43,8 +43,13 @@ class TestEipBinder(unittest.TestCase):
         self.ec2.associate_address.side_effect = ClientError({'Error': {}},
                                                              'AssociateAddress')
 
-        got_eip = self.eip.assign_from(EIPS)
+        got_eip = self.eip.assign_from(self.manifest)
         self.assertEqual(False, got_eip)
+
+    def test_assign_not_configured(self):
+        self.manifest.eips = ()
+        got_eip = self.eip.assign_from(self.manifest)
+        self.assertEquals(True, got_eip)
 
     def _mock_addresses(self, addresses):
         self.ec2.describe_addresses.return_value = {'Addresses': addresses}

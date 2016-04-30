@@ -9,25 +9,29 @@ class ElasticIpBinder(object):
     Binds this instance to an elastic IP.
     """
 
-    def __init__(self, ec2, instance_id):
-        self._ec2 = ec2
-        self._id = instance_id
+    def __init__(self, clients):
+        self._clients = clients
 
-    def assign_from(self, eips):
+    def assign_from(self, manifest):
         """
-        Assign EIP if available.
-        :param eips: EIP candidate list.
+        Assign EIP if configured.
+        :param manifest: Manifest.
         :return: True if EIP was assigned, false otherwise.
         """
-        addresses = self._ec2.describe_addresses(Filters=[{
+        if not manifest.eips:
+            logger.debug('Manifest does not configure EIP.')
+            return True
+
+        ec2 = self._clients.ec2()
+        addresses = ec2.describe_addresses(Filters=[{
             'Name': 'allocation-id',
-            'Values': eips
+            'Values': manifest.eips
         }])['Addresses']
 
         unassociated = []
         for address in addresses:
             eip_id = address['AllocationId']
-            if address.get('InstanceId') == self._id:
+            if address.get('InstanceId') == manifest.instance_id:
                 logger.debug('Discovered existing attachment: %s' % eip_id)
                 return True
 
@@ -37,10 +41,11 @@ class ElasticIpBinder(object):
         logger.debug('No EIP attached, %s EIPs available.', len(unassociated))
         for eip_id in unassociated:
             try:
-                associate_response = self._ec2.associate_address(
-                        InstanceId=self._id,
+                associate_response = ec2.associate_address(
+                        InstanceId=manifest.instance_id,
                         AllocationId=eip_id)
                 if associate_response['AssociationId']:
+                    logger.debug('Associated "%s".', eip_id)
                     return True
             except ClientError:
                 pass

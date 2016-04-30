@@ -6,22 +6,31 @@ logger = logging.getLogger('spacel')
 
 class ClientCache(object):
     """
-    Lazy instantiation container for EC2 client.
+    Lazy instantiation container for AWS clients.
     """
 
-    def __init__(self):
-        self._ec2 = {}
+    def __init__(self, region):
+        self._clients = {}
+        self.region = region
 
-    def ec2(self, region):
+    def ec2(self):
         """
-        Get EC2 client.
-        :param region:  AWS region.
-        :return: EC2 Client.
+        :return: EC2 client.
         """
-        cached = self._ec2.get(region)
+        return self._client('ec2')
+
+    def cloudformation(self):
+        """
+        Get CloudFormation client.
+        :return: CloudFormation client.
+        """
+        return self._client('cloudformation')
+
+    def _client(self, client_type):
+        cached = self._clients.get(client_type)
         if cached:
             return cached
-        logger.debug('Connecting to EC2 in %s.', region)
-        ec2 = boto3.client('ec2', region)
-        self._ec2[region] = ec2
-        return ec2
+        logger.debug('Connecting to %s in %s.', client_type, self.region)
+        client = boto3.client(client_type, self.region)
+        self._clients[client_type] = client
+        return client

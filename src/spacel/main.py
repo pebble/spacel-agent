@@ -1,7 +1,9 @@
 import logging
 import os
+import time
 
-from spacel.aws import AwsMeta, ClientCache, ElasticIpBinder
+from spacel.aws import (AwsMeta, ClientCache, CloudFormationSignaller,
+                        ElasticIpBinder)
 from spacel.agent import FileWriter, SystemdUnits
 from spacel.model import AgentManifest
 
@@ -30,25 +32,28 @@ if __name__ == '__main__':
     meta = AwsMeta()
     instance_id = meta.get_instance_id()
     region = meta.get_region()
-
-    # Build manifest:
-    params = meta.get_user_data()
-    manifest = AgentManifest(params)
-
-    # Act on manifest:
-    clients = ClientCache()
-
-    if manifest.eips:
-        eip = ElasticIpBinder(clients.ec2(region), instance_id)
-        eip.assign_from(manifest.eips)
-
-    if manifest.volumes:
-        # TODO: query+attach volumes
-        pass
+    user_data = meta.get_user_data()
 
     file_writer = FileWriter()
     manager = Manager()
     systemd = SystemdUnits(manager)
+    clients = ClientCache(region)
+    eip = ElasticIpBinder(clients)
+    cf = CloudFormationSignaller(clients)
+
+    # Build manifest:
+    manifest = AgentManifest(instance_id, user_data)
+
+    # Act on manifest:
+    eip.assign_from(manifest)
+    if manifest.volumes:
+        # TODO: query+attach volumes
+        pass
 
     file_writer.write_files(manifest)
     systemd.start_units(manifest)
+
+    # TODO: local health check
+    # TODO: ELB health check
+
+    cf.notify(manifest)

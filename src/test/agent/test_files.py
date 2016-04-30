@@ -5,13 +5,15 @@ import shutil
 from spacel.agent.files import FileWriter
 from spacel.model import AgentManifest
 
+INSTANCE_ID = 'i-123456'
+
 
 class TestFileWriter(unittest.TestCase):
     def setUp(self):
         self.home = tempfile.mkdtemp()
         self.systemd = tempfile.mkdtemp()
         self.writer = FileWriter(self.home, self.systemd)
-        self.manifest = AgentManifest({
+        self.manifest = AgentManifest(INSTANCE_ID, {
             'files': {
                 'foo.txt': {
                     'mode': '0644',

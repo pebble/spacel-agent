@@ -44,9 +44,7 @@ class AwsMeta(object):
         """
         try:
             user_data = urlopen(USER_DATA_URL).read()
-            if user_data.startswith('s3://'):
-                # TODO: download
-                user_data = ''
+            # TODO: if url, download
             return json.loads(user_data)
         except URLError:
             return {}

@@ -1,17 +1,18 @@
 import unittest
 
-from spacel.model.agent import AgentManifest
+from spacel.model.manifest import AgentManifest
 
+INSTANCE_ID = 'i-123456'
 EIP_ALLOCATION = 'eip-123456'
 
 
 class TestAgentManifest(unittest.TestCase):
     def test_eips(self):
-        manifest = AgentManifest({'eips': [EIP_ALLOCATION]})
+        manifest = AgentManifest(INSTANCE_ID, {'eips': [EIP_ALLOCATION]})
         self.assertEquals(manifest.eips, [EIP_ALLOCATION])
 
     def test_all_files(self):
-        manifest = AgentManifest({
+        manifest = AgentManifest(INSTANCE_ID, {
             'files': {'foo.txt': {}},
             'systemd': {'foo.service': {}}
         })

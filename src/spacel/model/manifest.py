@@ -1,9 +1,11 @@
 class AgentManifest(object):
-    def __init__(self, params):
+    def __init__(self, instance_id, params={}):
+        self.instance_id = instance_id
         self.eips = params.get('eips', ())
         self.volumes = params.get('volumes', ())
         self.files = params.get('files', {})
         self.systemd = params.get('systemd', {})
+        self.cf_signal = params.get('cloudformation_signal', {})
 
     @property
     def all_files(self):

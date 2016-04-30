@@ -1,1 +1,1 @@
-from .agent import AgentManifest
+from .manifest import AgentManifest
