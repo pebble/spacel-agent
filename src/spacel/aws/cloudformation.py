@@ -1,5 +1,3 @@
-import time
-
 import logging
 
 logger = logging.getLogger('spacel')
@@ -16,11 +14,10 @@ class CloudFormationSignaller(object):
 
         cloudformation = self._clients.cloudformation()
         for cf_stack, cf_resource_id in manifest.cf_signal.items():
-            unique_id = '%s-%d' % (manifest.instance_id, int(time.time()))
             logger.debug('Signalling %s in %s (%s).', cf_resource_id, cf_stack,
-                         unique_id)
+                         manifest.instance_id)
             cloudformation.signal_resource(
                     StackName=cf_stack,
                     LogicalResourceId=cf_resource_id,
-                    UniqueId=unique_id,
+                    UniqueId=manifest.instance_id,
                     Status=status)
