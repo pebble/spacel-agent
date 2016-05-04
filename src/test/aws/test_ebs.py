@@ -48,10 +48,49 @@ class TestVolumeBinder(MockedClientTest):
         self._mock_volume_records()
         self.ec2.describe_instances.return_value = {
             'Reservations': [{
-                'Instances': [{
-                    'InstanceId': 'i-333333',
-                    'State': {'Name': 'Terminated'}
-                }]
+                'Instances': [
+                    {
+                        'InstanceId': 'i-111111',
+                        'State': {'Name': 'Running'}
+                    },
+                    {
+                        'InstanceId': 'i-222222',
+                        'State': {'Name': 'Pending'}
+                    },
+                    {
+                        'InstanceId': 'i-333333',
+                        'State': {'Name': 'Terminated'}
+                    }
+
+                ]
+            }]
+        }
+
+        assignment = self.volume_binder._get_volume_assignment(self.volume)
+        # Assignment takes over the terminated instance:
+        self.assertEquals('2', assignment['volume_index']['N'])
+        self.dynamodb.update_item.assert_called_with(
+                TableName=ANY,
+                Key=ANY,
+                UpdateExpression=ANY,
+                ExpressionAttributeValues=ANY,
+                ConditionExpression=ANY
+        )
+
+    def test_get_volume_assignment_missing_instance(self):
+        self._mock_volume_records()
+        self.ec2.describe_instances.return_value = {
+            'Reservations': [{
+                'Instances': [
+                    {
+                        'InstanceId': 'i-111111',
+                        'State': {'Name': 'Running'}
+                    },
+                    {
+                        'InstanceId': 'i-222222',
+                        'State': {'Name': 'Pending'}
+                    }
+                ]
             }]
         }
 

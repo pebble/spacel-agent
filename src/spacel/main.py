@@ -46,9 +46,6 @@ if __name__ == '__main__':
         ebs.bind(volume)
     if not eip.assign_from(manifest):
         status = 'FAILURE'
-    if manifest.volumes:
-        # TODO: query+attach volumes
-        pass
 
     file_writer.write_files(manifest)
     systemd.start_units(manifest)

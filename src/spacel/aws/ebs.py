@@ -1,6 +1,7 @@
 import logging
 from botocore.exceptions import ClientError
 from subprocess import check_output, CalledProcessError, STDOUT
+import time
 import os
 
 logger = logging.getLogger('spacel')
@@ -65,14 +66,15 @@ class VolumeBinder(object):
         # Look for orphaned volumes:
         instance_ids = attached_instances.keys()
         instance_status = self._ec2.describe_instances(InstanceIds=instance_ids)
-        dead_instances = {}
+        dead_instances = dict(attached_instances)
         for reservation in instance_status.get('Reservations', ()):
             for instance in reservation.get('Instances', ()):
+                dead_instance_id = instance['InstanceId']
                 state = instance['State']['Name']
                 if state == 'Pending' or state == 'Running':  # pragma: no cover
+                    del dead_instances[dead_instance_id]
                     continue
 
-                dead_instance_id = instance['InstanceId']
                 volume_index = attached_instances[dead_instance_id]
                 logger.debug('Instance %s (volume %d) is %s.', dead_instance_id,
                              volume_index, state)
@@ -86,13 +88,13 @@ class VolumeBinder(object):
                     except ClientError:  # pragma: no cover
                         continue
 
-                # If different AZ, maybe if we can't find one in this AZ:
-                dead_instances[volume_index] = dead_instance_id
-
         # Nothing dead in our AZ, what about other AZs:
-        for volume_index, dead_instance_id in dead_instances.items():
-            self._assign_volume(volume, volume_index, dead_instance_id)
-            return volumes_by_index[volume_index]
+        for dead_instance_id, volume_index in dead_instances.items():
+            try:
+                self._assign_volume(volume, volume_index, dead_instance_id)
+                return volumes_by_index[volume_index]
+            except ClientError:
+                pass
 
         # Every volume is created and assigned to a running instance.
         # TODO: choose a victim like EIP?
@@ -189,20 +191,28 @@ class VolumeBinder(object):
             device = '/dev/xvd%s' % self._local_device
             self._local_device = chr(ord(self._local_device) + 1)
             try:
+                logger.debug('Attaching %s to %s.', volume_id, device)
                 self._ec2.attach_volume(
                         InstanceId=self._instance_id,
                         VolumeId=volume_id,
                         Device=device)
             except ClientError as e:
-                # FIXME: this is awkward; if it's attached to self
-                # we should know and not try to attach
                 if e.response['Error']['Code'] != 'VolumeInUse':
                     raise e
         else:
             device = attachment['Device']
 
-        if not os.path.isdir(mount_point):
-            os.mkdir(mount_point)
+        # Wait for block device to settle:
+        while True:
+            try:
+                blk = check_output(['/bin/lsblk', '-Pf', device], stderr=STDOUT)
+                break
+            except CalledProcessError:
+                time.sleep(0.1)
+
+        if 'FSTYPE=""' in blk:
+            logger.debug('Volume has no filesystem, creating...')
+            check_output(['mkfs', '-t', 'ext4', device], stderr=STDOUT)
 
         with open('/etc/mtab') as mtab_in:
             existing_mount = [mtab_line for mtab_line in mtab_in.readlines()
@@ -213,16 +223,11 @@ class VolumeBinder(object):
             # TODO: verify mount point matches
             return
 
-        try:
-            logger.debug('Mounting %s at %s.', volume_id, mount_point)
-            check_output(['mount', device, mount_point], stderr=STDOUT)
-        except CalledProcessError as e:
-            if 'wrong fs type, bad option, bad superblock' not in e.output:
-                raise e
+        if not os.path.isdir(mount_point):
+            os.mkdir(mount_point)
 
-            logger.debug('Volume %s has no filesystem, creating...', volume_id)
-            check_output(['mkfs', '-t', 'ext4', device])
-            check_output(['mount', device, mount_point], )
+        logger.debug('Mounting %s at %s.', volume_id, mount_point)
+        check_output(['mount', device, mount_point], stderr=STDOUT)
         logger.debug('Mounted %s at %s.', volume_id, mount_point)
 
     @staticmethod
