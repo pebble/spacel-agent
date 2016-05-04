@@ -1,11 +1,16 @@
+from spacel.model.volume import SpaceVolume
+
+
 class AgentManifest(object):
     def __init__(self, instance_id, params={}):
         self.instance_id = instance_id
         self.eips = params.get('eips', ())
-        self.volumes = params.get('volumes', ())
         self.files = params.get('files', {})
         self.systemd = params.get('systemd', {})
         self.cf_signal = params.get('cloudformation_signal', {})
+        self.volumes = {label: SpaceVolume(label, vol_params)
+                        for label, vol_params in
+                        params.get('volumes', {}).items()}
 
     @property
     def all_files(self):

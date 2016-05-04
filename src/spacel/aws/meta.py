@@ -1,5 +1,5 @@
 import json
-import time
+from time import time
 from urllib2 import urlopen, URLError
 
 INSTANCE_ID_URL = 'http://169.254.169.254/latest/meta-data/instance-id'
@@ -7,44 +7,19 @@ PLACEMENT_URL = ('http://169.254.169.254/latest/meta-data/placement/'
                  'availability-zone')
 USER_DATA_URL = 'http://169.254.169.254/latest/user-data'
 
+DEFAULT_INSTANCE = 'i-%s' % str(time()).replace('.', '')
+
 
 class AwsMeta(object):
-    """
-    Wraps AWS metadata calls.
-    """
+    def __init__(self):
+        self.instance_id = self._get(INSTANCE_ID_URL, DEFAULT_INSTANCE)
+        self.az = self._get(PLACEMENT_URL, 'us-east-1a')
+        self.region = self.az[:-1]
+        self.user_data = json.loads(self._get(USER_DATA_URL, '{}'))
 
     @staticmethod
-    def get_instance_id():
-        """
-        Get instance id.
-        :return: Instance id.
-        """
+    def _get(url, default):
         try:
-            return urlopen(INSTANCE_ID_URL).read()
+            return urlopen(url).read()
         except URLError:
-            return 'i-%s' % str(time.time()).replace('.', '')
-
-    @staticmethod
-    def get_region():
-        """
-        Get region.
-        :return: Region.
-        """
-        try:
-            az = urlopen(PLACEMENT_URL).read()
-            return az[:-1]
-        except URLError:
-            return 'us-east-1'
-
-    @staticmethod
-    def get_user_data():
-        """
-        Get user data.
-        :return: User data.
-        """
-        try:
-            user_data = urlopen(USER_DATA_URL).read()
-            # TODO: if url, download
-            return json.loads(user_data)
-        except URLError:
-            return {}
+            return default

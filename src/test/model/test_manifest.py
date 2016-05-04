@@ -21,3 +21,13 @@ class TestAgentManifest(unittest.TestCase):
         self.assertEquals(2, len(all_files))
         self.assertIn('foo.txt', all_files)
         self.assertIn('foo.service', all_files)
+
+    def test_volumes(self):
+        manifest = AgentManifest(INSTANCE_ID, {'volumes': {
+            'test': {
+                'size': 8
+            }
+        }})
+
+        self.assertEquals(1, len(manifest.volumes))
+        self.assertEquals(8, manifest.volumes['test'].size)

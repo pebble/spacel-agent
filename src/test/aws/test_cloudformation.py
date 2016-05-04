@@ -1,7 +1,5 @@
-from mock import ANY
-
 from spacel.aws import CloudFormationSignaller
-from test.aws import MockedClientTest
+from test.aws import MockedClientTest, INSTANCE_ID
 
 STACK_NAME = 'stack_name'
 RESOURCE_NAME = 'resource_name'
@@ -10,7 +8,7 @@ RESOURCE_NAME = 'resource_name'
 class TestCloudFormationSignaller(MockedClientTest):
     def setUp(self):
         super(TestCloudFormationSignaller, self).setUp()
-        self.signaller = CloudFormationSignaller(self.clients)
+        self.signaller = CloudFormationSignaller(self.clients, INSTANCE_ID)
 
         self.manifest.cf_signal = {STACK_NAME: RESOURCE_NAME}
 
@@ -24,5 +22,5 @@ class TestCloudFormationSignaller(MockedClientTest):
         self.cloudformation.signal_resource.assert_called_with(
                 StackName=STACK_NAME,
                 LogicalResourceId=RESOURCE_NAME,
-                UniqueId=ANY,
+                UniqueId=INSTANCE_ID,
                 Status='SUCCESS')

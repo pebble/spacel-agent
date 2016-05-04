@@ -4,8 +4,9 @@ logger = logging.getLogger('spacel')
 
 
 class CloudFormationSignaller(object):
-    def __init__(self, clients):
+    def __init__(self, clients, instance_id):
         self._clients = clients
+        self._instance_id = instance_id
 
     def notify(self, manifest, status='SUCCESS'):
         if not manifest.cf_signal:
@@ -19,5 +20,5 @@ class CloudFormationSignaller(object):
             cloudformation.signal_resource(
                     StackName=cf_stack,
                     LogicalResourceId=cf_resource_id,
-                    UniqueId=manifest.instance_id,
+                    UniqueId=self._instance_id,
                     Status=status)

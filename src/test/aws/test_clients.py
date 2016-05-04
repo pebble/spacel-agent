@@ -25,3 +25,8 @@ class TestClientCache(unittest.TestCase):
     def test_cloudformation(self, mock_boto3):
         self.clients.cloudformation()
         mock_boto3.client.assert_called_once_with('cloudformation', REGION)
+
+    @patch('spacel.aws.clients.boto3')
+    def test_dynamodb(self, mock_boto3):
+        self.clients.dynamodb()
+        mock_boto3.client.assert_called_once_with('dynamodb', REGION)

@@ -13,11 +13,12 @@ class ClientCache(object):
         self._clients = {}
         self.region = region
 
-    def ec2(self):
+    def autoscaling(self):
         """
-        :return: EC2 client.
+        Get AutoScaling client.
+        :return: AutoScaling client.
         """
-        return self._client('ec2')
+        return self._client('autoscaling')
 
     def cloudformation(self):
         """
@@ -25,6 +26,19 @@ class ClientCache(object):
         :return: CloudFormation client.
         """
         return self._client('cloudformation')
+
+    def dynamodb(self):
+        """
+        Get DynamoDb client.
+        :return: DynamoDb client.
+        """
+        return self._client('dynamodb')
+
+    def ec2(self):
+        """
+        :return: EC2 client.
+        """
+        return self._client('ec2')
 
     def _client(self, client_type):
         cached = self._clients.get(client_type)

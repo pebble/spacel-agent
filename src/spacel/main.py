@@ -1,11 +1,10 @@
 import logging
 import os
-import time
 
 from spacel.aws import (AwsMeta, ClientCache, CloudFormationSignaller,
-                        ElasticIpBinder)
+                        ElasticIpBinder, VolumeBinder)
 from spacel.agent import FileWriter, SystemdUnits
-from spacel.model import AgentManifest
+from spacel.model import AgentManifest, SpaceVolume
 
 try:
     from systemd.manager import Manager
@@ -30,22 +29,23 @@ if __name__ == '__main__':
 
     # Get context:
     meta = AwsMeta()
-    instance_id = meta.get_instance_id()
-    region = meta.get_region()
-    user_data = meta.get_user_data()
+    clients = ClientCache(meta.region)
 
+    # Dependency injection party!
     file_writer = FileWriter()
-    manager = Manager()
-    systemd = SystemdUnits(manager)
-    clients = ClientCache(region)
+    systemd = SystemdUnits(Manager())
     eip = ElasticIpBinder(clients)
-    cf = CloudFormationSignaller(clients)
+    cf = CloudFormationSignaller(clients, meta.instance_id)
+    ebs = VolumeBinder(clients, meta)
+    status = 'SUCCESS'
 
-    # Build manifest:
-    manifest = AgentManifest(instance_id, user_data)
+    manifest = AgentManifest(meta.instance_id, meta.user_data)
 
     # Act on manifest:
-    eip.assign_from(manifest)
+    for volume in manifest.volumes.values():
+        ebs.bind(volume)
+    if not eip.assign_from(manifest):
+        status = 'FAILURE'
     if manifest.volumes:
         # TODO: query+attach volumes
         pass
@@ -56,4 +56,4 @@ if __name__ == '__main__':
     # TODO: local health check
     # TODO: ELB health check
 
-    cf.notify(manifest)
+    cf.notify(manifest, status=status)
