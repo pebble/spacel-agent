@@ -70,8 +70,8 @@ class VolumeBinder(object):
         for reservation in instance_status.get('Reservations', ()):
             for instance in reservation.get('Instances', ()):
                 dead_instance_id = instance['InstanceId']
-                state = instance['State']['Name']
-                if state == 'Pending' or state == 'Running':  # pragma: no cover
+                state = instance['State']['Name'].lower()
+                if state == 'pending' or state == 'running':
                     del dead_instances[dead_instance_id]
                     continue
 
@@ -124,6 +124,7 @@ class VolumeBinder(object):
     def _get_volume(self, volume_item, volume):
         snapshot_id = volume_item.get('snapshot_id')
         volume_id = volume_item.get('volume_id')
+        new_snapshot = False
         if volume_id:
             volume_id = volume_id['S']
             logger.debug('Checking volume "%s".', volume_id)
@@ -138,18 +139,23 @@ class VolumeBinder(object):
                     logger.warn('Volume %s is attached to another instance!',
                                 volume_id)
 
-                if volume_description['AvailabilityZone'] == self._az:
+                volume_az = volume_description['AvailabilityZone']
+                if volume_az == self._az:
                     logger.debug('Found usable %s in %s.', volume_id, self._az)
                     return volume_id, None
                 else:
-                    logger.debug('Volume %s is in %s, snapshotting...',
-                                 volume_id, self._az)
+                    logger.debug('Volume %s is in %s, snapshotting.',
+                                 volume_id, volume_az)
                     snapshot = self._ec2.create_snapshot(VolumeId=volume_id)
                     snapshot_id = snapshot['SnapshotId']
+                    logger.debug('Snapshot %s started...', snapshot_id)
+
                     self._ec2.get_waiter('snapshot_completed').wait(
                             SnapshotIds=[snapshot_id])
-                    # TODO: persist snapshot_id
+                    logger.debug('Snapshot %s completed', snapshot_id)
+                    new_snapshot = True
                     self._ec2.delete_volume(VolumeId=volume_id)
+                    # TODO: tag snapshot: label, volume_index
 
         logger.debug('Creating EBS volume in %s.', self._az)
         volume_args = {
@@ -167,14 +173,22 @@ class VolumeBinder(object):
         volume_id = new_volume['VolumeId']
         self._ec2.get_waiter('volume_available').wait(VolumeIds=[volume_id])
         logger.debug('Created %s in %s.', volume_id, self._az)
+
+        update_expression = 'SET volume_id = :volume_id, az = :az'
+        update_values = {
+            ':volume_id': {'S': volume_id},
+            ':az': {'S': self._az}
+        }
+        if new_snapshot:
+            update_expression += ', snapshot_id = :snapshot_id'
+            update_values[':snapshot_id'] = {'S': snapshot_id}
+
         self._dynamo.update_item(
                 TableName=self._volume_table,
                 Key=self._volume_key(volume_item['label']['S'],
                                      volume_item['volume_index']['N']),
-                UpdateExpression='SET volume_id = :volume_id',
-                ExpressionAttributeValues={
-                    ':volume_id': {'S': volume_id}
-                })
+                UpdateExpression=update_expression,
+                ExpressionAttributeValues=update_values)
         return volume_id, None
 
     def _describe_volume(self, volume_id):
@@ -227,7 +241,8 @@ class VolumeBinder(object):
             os.mkdir(mount_point)
 
         logger.debug('Mounting %s at %s.', volume_id, mount_point)
-        check_output(['mount', device, mount_point], stderr=STDOUT)
+        check_output(['/bin/mount', device, mount_point], stderr=STDOUT)
+        check_output(['/bin/chmod', '777', mount_point], stderr=STDOUT)
         logger.debug('Mounted %s at %s.', volume_id, mount_point)
 
     @staticmethod
