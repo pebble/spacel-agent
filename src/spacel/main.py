@@ -2,9 +2,9 @@ import logging
 import os
 
 from spacel.aws import (AwsMeta, ClientCache, CloudFormationSignaller,
-                        ElasticIpBinder, VolumeBinder)
+                        ElbHealthCheck, ElasticIpBinder, VolumeBinder)
 from spacel.agent import FileWriter, SystemdUnits
-from spacel.model import AgentManifest, SpaceVolume
+from spacel.model import AgentManifest
 
 try:
     from systemd.manager import Manager
@@ -37,6 +37,7 @@ if __name__ == '__main__':
     eip = ElasticIpBinder(clients)
     cf = CloudFormationSignaller(clients, meta.instance_id)
     ebs = VolumeBinder(clients, meta)
+    elb = ElbHealthCheck(clients, meta)
     status = 'SUCCESS'
 
     manifest = AgentManifest(meta.instance_id, meta.user_data)
@@ -50,7 +51,7 @@ if __name__ == '__main__':
     file_writer.write_files(manifest)
     systemd.start_units(manifest)
 
-    # TODO: local health check
-    # TODO: ELB health check
+    if not elb.health(manifest):
+        status = 'FAILURE'
 
     cf.notify(manifest, status=status)

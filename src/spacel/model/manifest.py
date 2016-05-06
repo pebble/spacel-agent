@@ -11,6 +11,7 @@ class AgentManifest(object):
         self.volumes = {label: SpaceVolume(label, vol_params)
                         for label, vol_params in
                         params.get('volumes', {}).items()}
+        self.elb = params.get('elb')
 
     @property
     def all_files(self):

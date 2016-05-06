@@ -40,6 +40,12 @@ class ClientCache(object):
         """
         return self._client('ec2')
 
+    def elb(self):
+        """
+        :return: ELB client.
+        """
+        return self._client('elb')
+
     def _client(self, client_type):
         cached = self._clients.get(client_type)
         if cached:

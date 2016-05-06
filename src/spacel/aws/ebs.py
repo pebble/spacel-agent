@@ -240,6 +240,8 @@ class VolumeBinder(object):
         if not os.path.isdir(mount_point):
             os.mkdir(mount_point)
 
+        check_output(['/sbin/resize2fs', device], stderr=STDOUT)
+
         logger.debug('Mounting %s at %s.', volume_id, mount_point)
         check_output(['/bin/mount', device, mount_point], stderr=STDOUT)
         check_output(['/bin/chmod', '777', mount_point], stderr=STDOUT)
