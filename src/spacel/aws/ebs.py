@@ -227,6 +227,10 @@ class VolumeBinder(object):
         if 'FSTYPE=""' in blk:
             logger.debug('Volume has no filesystem, creating...')
             check_output(['mkfs', '-t', 'ext4', device], stderr=STDOUT)
+        else:
+            logger.debug('Volume has filesystem, verifying...')
+            check_output(['/sbin/e2fsck', '-f', device], stderr=STDOUT)
+            check_output(['/sbin/resize2fs', device], stderr=STDOUT)
 
         with open('/etc/mtab') as mtab_in:
             existing_mount = [mtab_line for mtab_line in mtab_in.readlines()
@@ -239,8 +243,6 @@ class VolumeBinder(object):
 
         if not os.path.isdir(mount_point):
             os.mkdir(mount_point)
-
-        check_output(['/sbin/resize2fs', device], stderr=STDOUT)
 
         logger.debug('Mounting %s at %s.', volume_id, mount_point)
         check_output(['/bin/mount', device, mount_point], stderr=STDOUT)
