@@ -136,8 +136,12 @@ class VolumeBinder(object):
                         if attachment.get('InstanceId') == self._instance_id:
                             return volume_id, attachment
 
-                    logger.warn('Volume %s is attached to another instance!',
-                                volume_id)
+                    logger.debug('Volume %s is attached to another instance!',
+                                 volume_id)
+                    volume_waiter = self._ec2.get_waiter('volume_available')
+                    volume_waiter.config.delay = 5
+                    volume_waiter.wait(VolumeIds=[volume_id])
+                    logger.debug('Volume %s released.', volume_id)
 
                 volume_az = volume_description['AvailabilityZone']
                 if volume_az == self._az:
@@ -229,7 +233,7 @@ class VolumeBinder(object):
             check_output(['mkfs', '-t', 'ext4', device], stderr=STDOUT)
         else:
             logger.debug('Volume has filesystem, verifying...')
-            check_output(['/sbin/e2fsck', '-f', device], stderr=STDOUT)
+            check_output(['/sbin/e2fsck', '-fy', device], stderr=STDOUT)
             check_output(['/sbin/resize2fs', device], stderr=STDOUT)
 
         with open('/etc/mtab') as mtab_in:
