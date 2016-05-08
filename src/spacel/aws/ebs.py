@@ -122,6 +122,9 @@ class VolumeBinder(object):
                 })
 
     def _get_volume(self, volume_item, volume):
+        volume_label = volume_item['label']['S']
+        volume_index = volume_item['volume_index']['N']
+
         snapshot_id = volume_item.get('snapshot_id')
         volume_id = volume_item.get('volume_id')
         new_snapshot = False
@@ -152,6 +155,14 @@ class VolumeBinder(object):
                                  volume_id, volume_az)
                     snapshot = self._ec2.create_snapshot(VolumeId=volume_id)
                     snapshot_id = snapshot['SnapshotId']
+                    self._ec2.create_tags(Resources=[snapshot_id],
+                                          Tags=[
+                                              {'Key': 'space-label',
+                                               'Value': volume_label},
+                                              {'Key': 'space-index',
+                                               'Value': volume_index},
+                                          ])
+
                     logger.debug('Snapshot %s started...', snapshot_id)
 
                     self._ec2.get_waiter('snapshot_completed').wait(
@@ -159,7 +170,6 @@ class VolumeBinder(object):
                     logger.debug('Snapshot %s completed', snapshot_id)
                     new_snapshot = True
                     self._ec2.delete_volume(VolumeId=volume_id)
-                    # TODO: tag snapshot: label, volume_index
 
         logger.debug('Creating EBS volume in %s.', self._az)
         volume_args = {
@@ -175,6 +185,14 @@ class VolumeBinder(object):
             volume_args['SnapshotId'] = snapshot_id
         new_volume = self._ec2.create_volume(**volume_args)
         volume_id = new_volume['VolumeId']
+        self._ec2.create_tags(Resources=[volume_id],
+                              Tags=[
+                                  {'Key': 'space-label',
+                                   'Value': volume_label},
+                                  {'Key': 'space-index',
+                                   'Value': volume_index},
+                              ])
+
         self._ec2.get_waiter('volume_available').wait(VolumeIds=[volume_id])
         logger.debug('Created %s in %s.', volume_id, self._az)
 
@@ -189,8 +207,7 @@ class VolumeBinder(object):
 
         self._dynamo.update_item(
                 TableName=self._volume_table,
-                Key=self._volume_key(volume_item['label']['S'],
-                                     volume_item['volume_index']['N']),
+                Key=self._volume_key(volume_label, volume_index),
                 UpdateExpression=update_expression,
                 ExpressionAttributeValues=update_values)
         return volume_id, None
