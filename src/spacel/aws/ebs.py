@@ -22,7 +22,8 @@ class VolumeBinder(object):
             logger.debug('Unable to assign volume.')
             return
         volume_id, attachment = self._get_volume(volume_item, volume)
-        self._attach_volume(volume_id, attachment, volume.mount_point)
+        self._attach_volume(volume_id, attachment, volume.mount_point,
+                            volume_item)
 
     def _get_volume_assignment(self, volume):
         # Query DynamoDb for volume records:
@@ -221,7 +222,7 @@ class VolumeBinder(object):
                 raise e
         return None
 
-    def _attach_volume(self, volume_id, attachment, mount_point):
+    def _attach_volume(self, volume_id, attachment, mount_point, volume_item):
         if not attachment:
             device = '/dev/xvd%s' % self._local_device
             self._local_device = chr(ord(self._local_device) + 1)
@@ -245,9 +246,11 @@ class VolumeBinder(object):
             except CalledProcessError:
                 time.sleep(0.1)
 
+        fresh_fs = False
         if 'FSTYPE=""' in blk:
             logger.debug('Volume has no filesystem, creating...')
             check_output(['mkfs', '-t', 'ext4', device], stderr=STDOUT)
+            fresh_fs = True
         else:
             logger.debug('Volume has filesystem, verifying...')
             check_output(['/sbin/e2fsck', '-fy', device], stderr=STDOUT)
@@ -269,6 +272,18 @@ class VolumeBinder(object):
         check_output(['/bin/mount', device, mount_point], stderr=STDOUT)
         check_output(['/bin/chmod', '777', mount_point], stderr=STDOUT)
         logger.debug('Mounted %s at %s.', volume_id, mount_point)
+
+        if fresh_fs:
+            volume_label = volume_item['label']['S']
+            volume_index = volume_item['volume_index']['N']
+            self._breadcrumb(mount_point, 'label', volume_label)
+            self._breadcrumb(mount_point, 'index', volume_index)
+
+    @staticmethod
+    def _breadcrumb(mount_point, fn, value):
+        crumb_path = os.path.join(mount_point, '.space-%s', fn)
+        with open(crumb_path, 'w') as out:
+            out.write(value)
 
     @staticmethod
     def _volume_key(service, volume_index):
