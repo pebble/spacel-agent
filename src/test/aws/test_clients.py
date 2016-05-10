@@ -11,6 +11,21 @@ class TestClientCache(unittest.TestCase):
         self.clients = ClientCache(REGION)
 
     @patch('spacel.aws.clients.boto3')
+    def test_autoscaling(self, mock_boto3):
+        self.clients.autoscaling()
+        mock_boto3.client.assert_called_once_with('autoscaling', REGION)
+
+    @patch('spacel.aws.clients.boto3')
+    def test_cloudformation(self, mock_boto3):
+        self.clients.cloudformation()
+        mock_boto3.client.assert_called_once_with('cloudformation', REGION)
+
+    @patch('spacel.aws.clients.boto3')
+    def test_dynamodb(self, mock_boto3):
+        self.clients.dynamodb()
+        mock_boto3.client.assert_called_once_with('dynamodb', REGION)
+
+    @patch('spacel.aws.clients.boto3')
     def test_ec2(self, mock_boto3):
         self.clients.ec2()
         mock_boto3.client.assert_called_once_with('ec2', REGION)
@@ -22,11 +37,6 @@ class TestClientCache(unittest.TestCase):
         self.assertEqual(1, mock_boto3.client.call_count)
 
     @patch('spacel.aws.clients.boto3')
-    def test_cloudformation(self, mock_boto3):
-        self.clients.cloudformation()
-        mock_boto3.client.assert_called_once_with('cloudformation', REGION)
-
-    @patch('spacel.aws.clients.boto3')
-    def test_dynamodb(self, mock_boto3):
-        self.clients.dynamodb()
-        mock_boto3.client.assert_called_once_with('dynamodb', REGION)
+    def test_elb(self, mock_boto3):
+        self.clients.elb()
+        mock_boto3.client.assert_called_once_with('elb', REGION)
