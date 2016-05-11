@@ -1,6 +1,6 @@
 import logging
 import os
-from subprocess import check_output, STDOUT
+from subprocess import check_output, STDOUT, CalledProcessError
 
 logger = logging.getLogger('spacel')
 
@@ -63,8 +63,11 @@ class DeviceMount(object):
     @staticmethod
     def _e2fsck(device):
         logger.debug('Volume has filesystem, verifying...')
-        check_output(['/sbin/e2fsck', '-fy', device], stderr=STDOUT)
-        check_output(['/sbin/resize2fs', device], stderr=STDOUT)
+        try:
+            check_output(['/sbin/e2fsck', '-fy', device], stderr=STDOUT)
+            check_output(['/sbin/resize2fs', device], stderr=STDOUT)
+        except CalledProcessError:
+            logger.warn('Fsck on %s failed, good luck.', device)
 
     @staticmethod
     def _existing_mount(device):  # pragma: no cover
