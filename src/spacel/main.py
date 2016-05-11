@@ -2,9 +2,11 @@ import logging
 import os
 
 from spacel.aws import (AwsMeta, ClientCache, CloudFormationSignaller,
-                        ElbHealthCheck, ElasticIpBinder, VolumeBinder)
+                        ElbHealthCheck, ElasticIpBinder)
+
 from spacel.agent import FileWriter, SystemdUnits
 from spacel.model import AgentManifest
+from spacel.volumes import VolumeBinder
 
 try:
     from systemd.manager import Manager
@@ -16,14 +18,17 @@ except ImportError:
 
 def setup_logging():
     logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s - %(levelname)s - %(threadName)s - %(message)s')
+                        format='%(asctime)s - %(levelname)s - %(message)s')
     logging.getLogger('boto3').setLevel(logging.CRITICAL)
     logging.getLogger('botocore').setLevel(logging.CRITICAL)
-    logging.getLogger('spacel').setLevel(logging.DEBUG)
+    spacel_logger = logging.getLogger('spacel')
+    spacel_logger.setLevel(logging.DEBUG)
+    return spacel_logger
 
 
 if __name__ == '__main__':
     setup_logging()
+    logger = logging.getLogger('spacel')
     if not os.path.isdir('/files'):
         os.mkdir('/files')
 
@@ -42,16 +47,20 @@ if __name__ == '__main__':
 
     manifest = AgentManifest(meta.instance_id, meta.user_data)
 
-    # Act on manifest:
-    for volume in manifest.volumes.values():
-        ebs.bind(volume)
-    if not eip.assign_from(manifest):
-        status = 'FAILURE'
+    if manifest.valid:
+        # Act on manifest:
+        for volume in manifest.volumes.values():
+            ebs.attach(volume)
+        if not eip.assign_from(manifest):
+            status = 'FAILURE'
 
-    file_writer.write_files(manifest)
-    systemd.start_units(manifest)
+        file_writer.write_files(manifest)
+        systemd.start_units(manifest)
 
-    if not elb.health(manifest):
+        if not elb.health(manifest):
+            status = 'FAILURE'
+    else:
+        logger.warn('Invalid manifest.')
         status = 'FAILURE'
 
     cf.notify(manifest, status=status)

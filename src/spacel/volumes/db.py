@@ -110,6 +110,7 @@ class VolumeDb(object):
         update_expression = 'SET ' + ', '.join(update_fields)
         update_values[':instance_id'] = {'S': self._instance_id}
 
+        logger.debug('Updating item %s', volume_key)
         self._dynamo.update_item(
                 TableName=self._table_name,
                 Key=volume_key,

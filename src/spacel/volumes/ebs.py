@@ -44,7 +44,7 @@ class EbsAttachment(object):
                 volume_az = volume_description['AvailabilityZone']
                 if volume_az == self._az:
                     logger.debug('Found usable %s in %s.', volume_id, self._az)
-                    self._attach_volume(volume_id)
+                    self._attach_volume(volume_item)
                     return volume_item
 
                 logger.debug('Volume %s is in %s, migrating.', volume_id,
@@ -60,7 +60,7 @@ class EbsAttachment(object):
                                       ])
 
                 logger.debug('Snapshot %s started...', snapshot_id)
-                volume_item['snapshot_id'] = snapshot_id
+                volume_item['snapshot_id'] = {'S': snapshot_id}
 
                 self._ec2.get_waiter('snapshot_completed').wait(
                         SnapshotIds=[snapshot_id])

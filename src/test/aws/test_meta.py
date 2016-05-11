@@ -36,3 +36,15 @@ class TestAwsMeta(unittest.TestCase):
         mock_urlopen.side_effect = URLError('Kaboom')
         instance_id = AwsMeta._get('url', 'default')
         self.assertEquals('default', instance_id)
+
+    @patch('spacel.aws.meta.urlopen')
+    def test_block_device(self, mock_urlopen):
+        mock_urlopen.return_value = StringIO('xvdc')
+        instance_id = AwsMeta.block_device(0)
+        self.assertEquals('/dev/xvdc', instance_id)
+
+    @patch('spacel.aws.meta.urlopen')
+    def test_block_device_translate(self, mock_urlopen):
+        mock_urlopen.return_value = StringIO('sdb')
+        instance_id = AwsMeta.block_device(0)
+        self.assertEquals('/dev/xvdb', instance_id)

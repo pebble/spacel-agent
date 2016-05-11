@@ -31,3 +31,32 @@ class TestAgentManifest(unittest.TestCase):
 
         self.assertEquals(1, len(manifest.volumes))
         self.assertEquals(8, manifest.volumes['test'].size)
+
+    def test_valid(self):
+        manifest = AgentManifest(INSTANCE_ID, {'volumes': {
+            'test': {
+                'size': 8
+            }
+        }})
+        self.assertTrue(manifest.valid)
+
+    def test_valid_invalid_volume(self):
+        manifest = AgentManifest(INSTANCE_ID, {'volumes': {
+            'test': {
+                'instance': 'meow'
+            }
+        }})
+
+        self.assertFalse(manifest.valid)
+
+    def test_valid_duplicate_volume(self):
+        manifest = AgentManifest(INSTANCE_ID, {'volumes': {
+            'test': {
+                'instance': 0
+            },
+            'test2': {
+                'instance': 0
+            }
+        }})
+
+        self.assertFalse(manifest.valid)

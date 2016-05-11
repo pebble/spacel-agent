@@ -12,13 +12,18 @@ class VolumeBinder(object):
     def __init__(self, clients, meta):
         self._db = VolumeDb(clients, meta)
         self._ebs = EbsAttachment(clients, meta)
-        self._fs = DeviceMount()
+        self._fs = DeviceMount(meta)
 
     def attach(self, volume):
+        if volume.instance is None:
+            self._attach_ebs(volume)
+        else:
+            self._fs.mount_instance(volume)
+
+    def _attach_ebs(self, volume):
         volume_item = self._db.get_assignment(volume)
         if not volume_item:
-            return False
-
+            return
         initial_volume = deepcopy(volume_item)
         self._ebs.attach_volume(volume, volume_item)
         self._fs.mount(volume, volume_item)

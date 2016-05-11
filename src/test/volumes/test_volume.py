@@ -39,3 +39,11 @@ class TestVolumeBinder(MockedClientTest):
 
         self.ebs.attach_volume.side_effect = mock_update
         self.volume_binder.attach(self.volume)
+
+    def test_attach_instance(self):
+        self.volume.instance = 0
+        self.volume_binder._attach_ebs = MagicMock()
+
+        self.volume_binder.attach(self.volume)
+
+        self.volume_binder._attach_ebs.assert_not_called()

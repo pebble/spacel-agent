@@ -19,3 +19,17 @@ class AgentManifest(object):
         every_file.update(self.files)
         every_file.update(self.systemd)
         return every_file
+
+    @property
+    def valid(self):
+        volume_ids = set()
+        for volume in self.volumes.values():
+            if not volume.valid:
+                return False
+            instance = volume.instance
+            if instance is not None:
+                if instance in volume_ids:
+                    return False
+                volume_ids.add(instance)
+
+        return True
