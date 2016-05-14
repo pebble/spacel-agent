@@ -5,6 +5,7 @@ from spacel.aws import (AwsMeta, ClientCache, CloudFormationSignaller,
                         ElbHealthCheck, ElasticIpBinder)
 
 from spacel.agent import FileWriter, SystemdUnits
+from spacel.logging import setup_logging
 from spacel.model import AgentManifest
 from spacel.volumes import VolumeBinder
 
@@ -14,17 +15,6 @@ except ImportError:
     import mock
 
     Manager = mock.MagicMock()
-
-
-def setup_logging():
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s - %(levelname)s - %(message)s')
-    logging.getLogger('boto3').setLevel(logging.CRITICAL)
-    logging.getLogger('botocore').setLevel(logging.CRITICAL)
-    spacel_logger = logging.getLogger('spacel')
-    spacel_logger.setLevel(logging.DEBUG)
-    return spacel_logger
-
 
 if __name__ == '__main__':
     setup_logging()
