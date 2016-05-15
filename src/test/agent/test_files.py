@@ -13,7 +13,7 @@ class TestFileWriter(unittest.TestCase):
         self.home = tempfile.mkdtemp()
         self.systemd = tempfile.mkdtemp()
         self.writer = FileWriter(self.home, self.systemd)
-        self.manifest = AgentManifest(INSTANCE_ID, {
+        self.manifest = AgentManifest({
             'files': {
                 'foo.txt': {
                     'mode': '0644',

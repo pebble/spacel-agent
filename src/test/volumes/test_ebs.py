@@ -3,11 +3,10 @@ from mock import MagicMock, patch
 from spacel.model import SpaceVolume
 from spacel.volumes.ebs import EbsAttachment
 from test.aws import MockedClientTest, INSTANCE_ID, AVAILABILITY_ZONE
-from test.volumes import LABEL
+from test.volumes import LABEL, DEVICE
 
 VOLUME_ID = 'vol-111111'
 SNAPSHOT_ID = 'snap-123456'
-DEVICE = '/dev/xvdb'
 
 
 class TestEbsAttachment(MockedClientTest):
@@ -89,7 +88,7 @@ class TestEbsAttachment(MockedClientTest):
     def test_attach_create_volume(self):
         self.volume.iops = 400
         self.volume.encrypted = True
-        self.volume_item['snapshot_id'] = SNAPSHOT_ID
+        self.volume_item['snapshot_id'] = {'S': SNAPSHOT_ID}
         self.ebs_attachment._next_volume = MagicMock(return_value=DEVICE)
         self.ebs_attachment._attach_volume = MagicMock()
 

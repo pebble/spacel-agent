@@ -12,7 +12,7 @@ class TestEipBinder(MockedClientTest):
     def setUp(self):
         super(TestEipBinder, self).setUp()
         self.manifest.eips = EIPS
-        self.eip = ElasticIpBinder(self.clients)
+        self.eip = ElasticIpBinder(self.clients, self.meta)
 
     def test_assign_from_has_address(self):
         self._mock_addresses([{

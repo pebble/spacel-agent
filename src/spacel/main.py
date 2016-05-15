@@ -29,13 +29,13 @@ if __name__ == '__main__':
     # Dependency injection party!
     file_writer = FileWriter()
     systemd = SystemdUnits(Manager())
-    eip = ElasticIpBinder(clients)
+    eip = ElasticIpBinder(clients, meta)
     cf = CloudFormationSignaller(clients, meta.instance_id)
     ebs = VolumeBinder(clients, meta)
     elb = ElbHealthCheck(clients, meta)
     status = 'SUCCESS'
 
-    manifest = AgentManifest(meta.instance_id, meta.user_data)
+    manifest = AgentManifest(meta.user_data)
 
     if manifest.valid:
         # Act on manifest:

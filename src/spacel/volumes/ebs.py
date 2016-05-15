@@ -78,7 +78,7 @@ class EbsAttachment(object):
         if volume.encrypted:
             volume_args['Encrypted'] = volume.encrypted
         if 'snapshot_id' in volume_item:
-            volume_args['SnapshotId'] = volume_item['snapshot_id']
+            volume_args['SnapshotId'] = volume_item['snapshot_id']['S']
         new_volume = self._ec2.create_volume(**volume_args)
         volume_id = new_volume['VolumeId']
         volume_item['volume_id'] = {'S': volume_id}

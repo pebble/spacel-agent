@@ -2,7 +2,7 @@ from mock import ANY
 from spacel.model import SpaceVolume
 from spacel.volumes.db import VolumeDb
 from test.aws import MockedClientTest, INSTANCE_ID, AVAILABILITY_ZONE
-from test.volumes import LABEL
+from test.volumes import LABEL, VOLUME_INDEX
 
 TABLE_NAME = 'volumes'
 
@@ -20,7 +20,7 @@ class TestVolumeDb(MockedClientTest):
             'Responses': {
                 TABLE_NAME: [{
                     'label': {'S': LABEL},
-                    'index': {'N': '0'}
+                    'index': {'N': VOLUME_INDEX}
                 }]
             }
         }
@@ -36,13 +36,13 @@ class TestVolumeDb(MockedClientTest):
 
         self.assertEquals(INSTANCE_ID, assignment['assignment']['S'])
         self.assertEquals(AVAILABILITY_ZONE, assignment['az']['S'])
-        self.assertEquals('0', assignment['index']['N'])
+        self.assertEquals(VOLUME_INDEX, assignment['index']['N'])
 
         self.dynamodb.put_item.assert_called_with(
                 TableName=TABLE_NAME,
                 Item={
                     'label': {'S': LABEL},
-                    'index': {'N': '0'},
+                    'index': {'N': VOLUME_INDEX},
                     'az': {'S': AVAILABILITY_ZONE},
                     'assignment': {'S': INSTANCE_ID}
                 },
@@ -117,23 +117,22 @@ class TestVolumeDb(MockedClientTest):
         self.assertIsNone(assignment)
 
     def test_volume_key(self):
-        index = '0'
-        volume_key = self.volume_db._volume_key(LABEL, index)
+        volume_key = self.volume_db._volume_key(LABEL, VOLUME_INDEX)
         self.assertEquals(2, len(volume_key))
         self.assertEquals(LABEL, volume_key['label']['S'])
-        self.assertEquals(index, volume_key['index']['N'])
+        self.assertEquals(VOLUME_INDEX, volume_key['index']['N'])
 
     def test_save_noop(self):
         self.volume_db.save({
             'label': {'S': LABEL},
-            'index': {'N': '0'}
+            'index': {'N': VOLUME_INDEX}
         })
         self.dynamodb.update_item.assert_not_called()
 
     def test_save(self):
         self.volume_db.save({
             'label': {'S': LABEL},
-            'index': {'N': '0'},
+            'index': {'N': VOLUME_INDEX},
             'volume_id': {'S': 'vol-123456'}
         })
         self.dynamodb.update_item.assert_called_with(

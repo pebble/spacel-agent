@@ -23,4 +23,4 @@ class MockedClientTest(unittest.TestCase):
         self.meta.instance_id = INSTANCE_ID
         self.meta.az = AVAILABILITY_ZONE
         self.meta.region = AVAILABILITY_ZONE[:-1]
-        self.manifest = AgentManifest(INSTANCE_ID)
+        self.manifest = AgentManifest()

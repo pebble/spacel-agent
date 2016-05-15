@@ -10,8 +10,9 @@ class ElasticIpBinder(object):
     Binds this instance to an elastic IP.
     """
 
-    def __init__(self, clients):
+    def __init__(self, clients, meta):
         self._clients = clients
+        self._instance_id = meta.instance_id
 
     def assign_from(self, manifest):
         """
@@ -34,7 +35,7 @@ class ElasticIpBinder(object):
         for address in addresses:
             eip_id = address['AllocationId']
             eip_instance_id = address.get('InstanceId')
-            if eip_instance_id == manifest.instance_id:
+            if eip_instance_id == self._instance_id:
                 logger.debug('Discovered existing attachment: %s' % eip_id)
                 return True
 
@@ -45,7 +46,7 @@ class ElasticIpBinder(object):
 
         reassociate = False
         if not unassociated and associated:
-            victim = self._victim(manifest.instance_id, associated)
+            victim = self._victim(self._instance_id, associated)
             if victim:
                 victim_eip = associated[victim]
                 logger.debug('Stealing %s from %s.', victim_eip, victim)
@@ -56,7 +57,7 @@ class ElasticIpBinder(object):
         for eip_id in unassociated:
             try:
                 associate_response = ec2.associate_address(
-                        InstanceId=manifest.instance_id,
+                        InstanceId=self._instance_id,
                         AllocationId=eip_id,
                         AllowReassociation=reassociate)
                 if associate_response['AssociationId']:

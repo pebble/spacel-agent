@@ -16,7 +16,7 @@ class CloudFormationSignaller(object):
         cloudformation = self._clients.cloudformation()
         for cf_stack, cf_resource_id in manifest.cf_signal.items():
             logger.debug('Signalling %s in %s (%s).', cf_resource_id, cf_stack,
-                         manifest.instance_id)
+                         self._instance_id)
             cloudformation.signal_resource(
                     StackName=cf_stack,
                     LogicalResourceId=cf_resource_id,

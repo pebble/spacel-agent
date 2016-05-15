@@ -2,8 +2,7 @@ from spacel.model.volume import SpaceVolume
 
 
 class AgentManifest(object):
-    def __init__(self, instance_id, params={}):
-        self.instance_id = instance_id
+    def __init__(self, params={}):
         self.eips = params.get('eips', ())
         self.files = params.get('files', {})
         self.systemd = params.get('systemd', {})

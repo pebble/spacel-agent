@@ -8,11 +8,11 @@ EIP_ALLOCATION = 'eip-123456'
 
 class TestAgentManifest(unittest.TestCase):
     def test_eips(self):
-        manifest = AgentManifest(INSTANCE_ID, {'eips': [EIP_ALLOCATION]})
+        manifest = AgentManifest({'eips': [EIP_ALLOCATION]})
         self.assertEquals(manifest.eips, [EIP_ALLOCATION])
 
     def test_all_files(self):
-        manifest = AgentManifest(INSTANCE_ID, {
+        manifest = AgentManifest({
             'files': {'foo.txt': {}},
             'systemd': {'foo.service': {}}
         })
@@ -23,7 +23,7 @@ class TestAgentManifest(unittest.TestCase):
         self.assertIn('foo.service', all_files)
 
     def test_volumes(self):
-        manifest = AgentManifest(INSTANCE_ID, {'volumes': {
+        manifest = AgentManifest({'volumes': {
             'test': {
                 'size': 8
             }
@@ -33,7 +33,7 @@ class TestAgentManifest(unittest.TestCase):
         self.assertEquals(8, manifest.volumes['test'].size)
 
     def test_valid(self):
-        manifest = AgentManifest(INSTANCE_ID, {'volumes': {
+        manifest = AgentManifest({'volumes': {
             'test': {
                 'size': 8
             }
@@ -41,7 +41,7 @@ class TestAgentManifest(unittest.TestCase):
         self.assertTrue(manifest.valid)
 
     def test_valid_invalid_volume(self):
-        manifest = AgentManifest(INSTANCE_ID, {'volumes': {
+        manifest = AgentManifest({'volumes': {
             'test': {
                 'instance': 'meow'
             }
@@ -50,7 +50,7 @@ class TestAgentManifest(unittest.TestCase):
         self.assertFalse(manifest.valid)
 
     def test_valid_duplicate_volume(self):
-        manifest = AgentManifest(INSTANCE_ID, {'volumes': {
+        manifest = AgentManifest({'volumes': {
             'test': {
                 'instance': 0
             },

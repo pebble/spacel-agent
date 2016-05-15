@@ -13,7 +13,7 @@ class TestSystemdUnits(unittest.TestCase):
         self.unit.properties.Id = SYSTEMD_SERVICE
 
         self.manager = MagicMock()
-        self.manifest = AgentManifest(INSTANCE_ID, {
+        self.manifest = AgentManifest({
             'systemd': {
                 SYSTEMD_SERVICE: ''
             }
