@@ -1,11 +1,10 @@
-import logging
 import os
 
 from spacel.aws import (AwsMeta, ClientCache, CloudFormationSignaller,
                         ElbHealthCheck, ElasticIpBinder)
 
 from spacel.agent import FileWriter, SystemdUnits
-from spacel.logging import setup_logging
+from spacel.log import setup_logging
 from spacel.model import AgentManifest
 from spacel.volumes import VolumeBinder
 
@@ -17,8 +16,7 @@ except ImportError:
     Manager = mock.MagicMock()
 
 if __name__ == '__main__':
-    setup_logging()
-    logger = logging.getLogger('spacel')
+    logger = setup_logging()
     if not os.path.isdir('/files'):
         os.mkdir('/files')
 
@@ -33,8 +31,8 @@ if __name__ == '__main__':
     cf = CloudFormationSignaller(clients, meta.instance_id)
     ebs = VolumeBinder(clients, meta)
     elb = ElbHealthCheck(clients, meta)
-    status = 'SUCCESS'
 
+    status = 'SUCCESS'
     manifest = AgentManifest(meta.user_data)
 
     if manifest.valid:

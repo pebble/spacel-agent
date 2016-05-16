@@ -1,16 +1,16 @@
 from mock import MagicMock, ANY
 from spacel.ssh.db import SshDb
-from test.aws import MockedClientTest, INSTANCE_ID, AVAILABILITY_ZONE
+from test.aws import MockedClientTest
 
 NAME = 'test-service'
-SERVICES_TABLE_NAME = 'services'
-USERS_TABLE_NAME = 'users'
+SERVICES_TABLE_NAME = 'unittest-services'
+USERS_TABLE_NAME = 'unittest-users'
 
 
 class TestSshDb(MockedClientTest):
     def setUp(self):
         super(TestSshDb, self).setUp()
-        self.ssh_db = SshDb(self.clients)
+        self.ssh_db = SshDb(self.clients, self.meta)
 
     def test_bastion_keys(self):
         self.ssh_db._keys = MagicMock()

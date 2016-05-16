@@ -1,7 +1,7 @@
 import logging
 
 
-def setup_logging():
+def setup_logging():  # pragma: no cover
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s - %(levelname)s - %(message)s')
     logging.getLogger('boto3').setLevel(logging.CRITICAL)

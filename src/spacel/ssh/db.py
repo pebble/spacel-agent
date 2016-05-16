@@ -6,10 +6,10 @@ ADMIN_SERVICE_NAME = 'SPACE_ELEVATOR_OPERATORS'
 
 
 class SshDb(object):
-    def __init__(self, clients):
+    def __init__(self, clients, meta):
         self.dynamodb = clients.dynamodb()
-        self.services_table = 'services'
-        self.users_table = 'users'
+        self.services_table = '%s-services' % meta.orbit
+        self.users_table = '%s-users' % meta.orbit
 
     def bastion_keys(self, key=None):
         """
