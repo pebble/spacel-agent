@@ -22,7 +22,8 @@ def main(args):
 
 
 if __name__ == '__main__':  # pragma: no cover
+    import logging
     import sys
 
-    setup_logging()
+    setup_logging(logging.WARN)
     main(sys.argv)
