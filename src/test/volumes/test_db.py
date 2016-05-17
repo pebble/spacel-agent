@@ -4,7 +4,7 @@ from spacel.volumes.db import VolumeDb
 from test.aws import MockedClientTest, INSTANCE_ID, AVAILABILITY_ZONE
 from test.volumes import LABEL, VOLUME_INDEX
 
-TABLE_NAME = 'volumes'
+TABLE_NAME = 'unittest-volumes'
 
 
 class TestVolumeDb(MockedClientTest):
@@ -54,7 +54,7 @@ class TestVolumeDb(MockedClientTest):
                                'assignment': {'S': INSTANCE_ID}}
         self.dynamodb.batch_get_item.return_value = {
             'Responses': {
-                'volumes': [existing_assignment]
+                TABLE_NAME: [existing_assignment]
             }
         }
 
@@ -158,14 +158,14 @@ class TestVolumeDb(MockedClientTest):
     def _mock_volume_records(self):
         self.dynamodb.batch_get_item.return_value = {
             'Responses': {
-                'volumes': [{'index': {'N': '0'},
-                             'assignment': {'S': 'i-111111'},
-                             'az': 'us-west-2a'},
-                            {'index': {'N': '1'},
-                             'assignment': {'S': 'i-222222'},
-                             'az': 'us-west-2b'},
-                            {'index': {'N': '2'},
-                             'assignment': {'S': 'i-333333'},
-                             'az': 'us-west-2c'}]
+                TABLE_NAME: [{'index': {'N': '0'},
+                              'assignment': {'S': 'i-111111'},
+                              'az': 'us-west-2a'},
+                             {'index': {'N': '1'},
+                              'assignment': {'S': 'i-222222'},
+                              'az': 'us-west-2b'},
+                             {'index': {'N': '2'},
+                              'assignment': {'S': 'i-333333'},
+                              'az': 'us-west-2c'}]
             }
         }

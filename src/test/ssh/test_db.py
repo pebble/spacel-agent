@@ -58,6 +58,11 @@ class TestSshDb(MockedClientTest):
 
         self.assertEqual(('ssh-rsa 1',), keys)
 
+    def test_keys_empty(self):
+        keys = self.ssh_db._keys([], None)
+
+        self.assertEqual([], keys)
+
     def _mock_keys(self):
         self.dynamodb.batch_get_item.return_value = {
             'Responses': {

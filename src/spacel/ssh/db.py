@@ -56,6 +56,9 @@ class SshDb(object):
         return self._keys(users, key)
 
     def _keys(self, user_set, key):
+        if not user_set:
+            return []
+
         keys = set()
         user_keys = [{'username': {'S': username}} for username in user_set]
         for user in self._batch_get(self.users_table, user_keys, ['keys']):

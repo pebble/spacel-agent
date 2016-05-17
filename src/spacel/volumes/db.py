@@ -14,7 +14,7 @@ class VolumeDb(object):
         self._ec2 = clients.ec2()
         self._instance_id = meta.instance_id
         self._az = meta.az
-        self._table_name = 'volumes'
+        self._table_name = '%s-volumes' % meta.orbit
 
     def get_assignment(self, volume):
         """
