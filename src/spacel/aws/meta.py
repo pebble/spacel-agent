@@ -17,16 +17,33 @@ class AwsMeta(object):
         self.instance_id = self._get(INSTANCE_ID_URL, DEFAULT_INSTANCE)
         self.az = self._get(PLACEMENT_URL, 'us-east-1a')
         self.region = self.az[:-1]
-        self.user_data = json.loads(self._get(USER_DATA_URL, '{}'))
+        self.user_data = self._parse_user_data(self._get(USER_DATA_URL, '{}'))
         self.name = self.user_data.get('name', 'test')
         self.orbit = self.user_data.get('orbit', 'test')
         self.bastion = self.user_data.get('bastion', False)
+
+    def _parse_user_data(self, data):
+        split = data.splitlines()
+        for line in split:
+            if line.startswith('#manifest:'):
+                location = line.replace('#manifest:', '').strip()
+                return json.loads(self._read_file(location, '{}'))
+
+        return json.loads(data)
 
     @staticmethod
     def _get(url, default):
         try:
             return urlopen(url).read()
         except URLError:
+            return default
+
+    @staticmethod
+    def _read_file(path, default):
+        try:
+            with open(path) as file_in:
+                return file_in.read()
+        except IOError:
             return default
 
     @staticmethod
