@@ -2,7 +2,7 @@ import unittest
 from StringIO import StringIO
 from urllib2 import URLError
 
-from mock import patch, MagicMock
+from mock import patch
 from spacel.aws.meta import AwsMeta
 
 INSTANCE_ID = 'i-123456'
@@ -31,9 +31,9 @@ class TestAwsMeta(unittest.TestCase):
         result = self.meta._parse_user_data(JSON)
         self.assertEqual(result, {'foo': 'bar'})
 
-    def test_parse_user_data_cloud_config(self):
-        self.meta._read_file = MagicMock()
-        self.meta._read_file.return_value = JSON
+    @patch('spacel.aws.meta.read_file')
+    def test_parse_user_data_cloud_config(self, mock_read_file):
+        mock_read_file.return_value = JSON
         cloudconfig = """#cloud-config
 
 #manifest: /location/of/manifest/file
@@ -41,8 +41,8 @@ class TestAwsMeta(unittest.TestCase):
 coreos:
   units..."""
         result = self.meta._parse_user_data(cloudconfig)
-        self.meta._read_file.assert_called_with('/location/of/manifest/file',
-                                                '{}')
+        mock_read_file.assert_called_with('/location/of/manifest/file',
+                                          '{}')
         self.assertEqual(result, {'foo': 'bar'})
 
     @patch('spacel.aws.meta.urlopen')
@@ -56,16 +56,6 @@ coreos:
         mock_urlopen.side_effect = URLError('Kaboom')
         instance_id = AwsMeta._get('url', 'default')
         self.assertEquals('default', instance_id)
-
-    def test_read_file(self):
-        output = AwsMeta._read_file('test/open.test', 'default')
-        self.assertEquals('test', output)
-
-    @patch('spacel.aws.meta.open')
-    def test_read_file_error(self, mock_open):
-        mock_open.side_effect = IOError('Kaboom')
-        output = AwsMeta._read_file('test/open.test', 'default')
-        self.assertEquals('default', output)
 
     @patch('spacel.aws.meta.urlopen')
     def test_block_device(self, mock_urlopen):

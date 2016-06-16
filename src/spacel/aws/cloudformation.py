@@ -1,4 +1,5 @@
 import logging
+from spacel.aws.helpers import read_file
 
 logger = logging.getLogger('spacel')
 
@@ -15,6 +16,16 @@ class CloudFormationSignaller(object):
 
         cloudformation = self._clients.cloudformation()
         for cf_stack, cf_resource_id in manifest.cf_signal.items():
+            if cf_stack.startswith('path:/'):
+                cf_stack = cf_stack.replace('path:', '').strip()
+                cf_stack = read_file(cf_stack, None)
+            if cf_resource_id.startswith('path:/'):
+                cf_resource_id = cf_resource_id.replace('path:', '').strip()
+                cf_resource_id = read_file(cf_resource_id, None)
+            if cf_stack is None or cf_resource_id is None:
+                logger.debug('CFN: Stack/Resource ID not found!')
+                return
+
             logger.debug('Signalling %s in %s (%s).', cf_resource_id, cf_stack,
                          self._instance_id)
             cloudformation.signal_resource(
