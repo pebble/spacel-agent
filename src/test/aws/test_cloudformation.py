@@ -1,3 +1,4 @@
+from mock import patch
 from spacel.aws import CloudFormationSignaller
 from test.aws import MockedClientTest, INSTANCE_ID
 
@@ -24,3 +25,25 @@ class TestCloudFormationSignaller(MockedClientTest):
                 LogicalResourceId=RESOURCE_NAME,
                 UniqueId=INSTANCE_ID,
                 Status='SUCCESS')
+
+    @patch('spacel.aws.cloudformation.read_file')
+    def test_notify_path(self, mock_read_file):
+        mock_read_file.side_effect = [STACK_NAME, RESOURCE_NAME]
+        self.manifest.cf_signal = {
+            'path:/home/stack': 'path:/home/resource_id'
+        }
+        self.signaller.notify(self.manifest)
+        self.cloudformation.signal_resource.assert_called_with(
+                StackName=STACK_NAME,
+                LogicalResourceId=RESOURCE_NAME,
+                UniqueId=INSTANCE_ID,
+                Status='SUCCESS')
+
+    @patch('spacel.aws.cloudformation.read_file')
+    def test_notify_path_not_found(self, mock_read_file):
+        mock_read_file.side_effect = [STACK_NAME, None]
+        self.manifest.cf_signal = {
+            'path:/home/stack': 'path:/home/resource_id'
+        }
+        self.signaller.notify(self.manifest)
+        self.cloudformation.signal_resource.assert_not_called()
