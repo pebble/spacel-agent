@@ -1,3 +1,4 @@
+from botocore.exceptions import ClientError
 from mock import patch
 from spacel.aws import CloudFormationSignaller
 from test.aws import MockedClientTest, INSTANCE_ID
@@ -20,6 +21,26 @@ class TestCloudFormationSignaller(MockedClientTest):
 
     def test_notify(self):
         self.signaller.notify(self.manifest)
+        self.cloudformation.signal_resource.assert_called_with(
+                StackName=STACK_NAME,
+                LogicalResourceId=RESOURCE_NAME,
+                UniqueId=INSTANCE_ID,
+                Status='SUCCESS')
+
+    def test_notify_exception_caught(self):
+        client_error = ClientError({'Error': {'Code': 'ValidationError'}}, '')
+        self.cloudformation.signal_resource.side_effect = client_error
+        self.signaller.notify(self.manifest)
+        self.cloudformation.signal_resource.assert_called_with(
+                StackName=STACK_NAME,
+                LogicalResourceId=RESOURCE_NAME,
+                UniqueId=INSTANCE_ID,
+                Status='SUCCESS')
+
+    def test_notify_exception(self):
+        self.cloudformation.signal_resource.side_effect = Exception('Kaboom')
+        self.assertRaises(Exception, self.signaller.notify,
+                          self.manifest)
         self.cloudformation.signal_resource.assert_called_with(
                 StackName=STACK_NAME,
                 LogicalResourceId=RESOURCE_NAME,
