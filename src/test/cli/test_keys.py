@@ -2,33 +2,33 @@ from mock import MagicMock, patch
 import unittest
 
 from spacel.aws import AwsMeta
-from spacel.ssh.client import main
+from spacel.cli.keys import get_keys
 from spacel.ssh.db import SshDb
 
 SERVICE_NAME = 'test'
 
 
 class TestSshClient(unittest.TestCase):
-    @patch('spacel.ssh.client.ClientCache')
-    @patch('spacel.ssh.client.AwsMeta')
-    @patch('spacel.ssh.client.SshDb')
+    @patch('spacel.cli.keys.ClientCache')
+    @patch('spacel.cli.keys.AwsMeta')
+    @patch('spacel.cli.keys.SshDb')
     def test_keys_bastion(self, sshdb_constructor, meta_constructor, _):
         self._setup_mocks(meta_constructor, sshdb_constructor)
         self.mock_meta.bastion = True
 
-        main([])
+        get_keys()
 
         self.mock_db.bastion_keys.assert_called_with()
         self.mock_db.service_keys.assert_not_called()
 
-    @patch('spacel.ssh.client.ClientCache')
-    @patch('spacel.ssh.client.AwsMeta')
-    @patch('spacel.ssh.client.SshDb')
+    @patch('spacel.cli.keys.ClientCache')
+    @patch('spacel.cli.keys.AwsMeta')
+    @patch('spacel.cli.keys.SshDb')
     def test_keys_service(self, sshdb_constructor, meta_constructor, _):
         self._setup_mocks(meta_constructor, sshdb_constructor)
         self.mock_meta.bastion = False
 
-        main([])
+        get_keys()
 
         self.mock_db.bastion_keys.assert_not_called()
         self.mock_db.service_keys.assert_called_with(SERVICE_NAME)

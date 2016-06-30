@@ -1,14 +1,23 @@
-#!/usr/bin/env python
-
-import logging
+import click
 from spacel.aws import AwsMeta, ClientCache
-from spacel.log import setup_logging
 from spacel.ssh.db import SshDb
+import logging
 
 logger = logging.getLogger('spacel')
 
 
-def main(args):
+@click.group()
+def keys_cmd():  # pragma: no cover
+    pass
+
+
+@keys_cmd.command(
+        help='Get authorized SSH keys, intended as AuthorizedKeysCommand.')
+def keys():  # pragma: no cover
+    get_keys()
+
+
+def get_keys():
     meta = AwsMeta()
     clients = ClientCache(meta.region)
 
@@ -19,11 +28,3 @@ def main(args):
         keys = db.service_keys(meta.name)
 
     print '\n'.join(keys)
-
-
-if __name__ == '__main__':  # pragma: no cover
-    import logging
-    import sys
-
-    setup_logging(logging.WARN)
-    main(sys.argv)
