@@ -1,6 +1,6 @@
 dockerBuild {
     name = 'pwagner/spacel-agent'
-    testCommand = 'docker-compose up test'
+    testCommand = 'make composetest'
     reports = [
         tests: '**/build/nosetests.xml',
         tasks: '**/*.py'
