@@ -60,10 +60,12 @@ class SystemdUnits(object):
 
         for missing_unit in manifest_units:
             name = missing_unit.replace('.service', '')
-            if name not in timers:
-                try:
-                    yield self._manager.load_unit(missing_unit)
-                except:
-                    logger.warn('Error loading "%s".',
-                                missing_unit,
-                                exc_info=True)
+            if name in timers:
+                continue
+
+            try:
+                yield self._manager.load_unit(missing_unit)
+            except:
+                logger.warn('Error loading "%s".',
+                            missing_unit,
+                            exc_info=True)
