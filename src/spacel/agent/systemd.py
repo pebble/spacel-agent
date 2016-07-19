@@ -48,6 +48,9 @@ class SystemdUnits(object):
     def _get_units(self, manifest):
         manifest_units = set(manifest.systemd.keys())
 
+        timers = [unit.replace('.timer', '') for unit in manifest_units
+                  if unit.endswith('.timer')]
+
         # Return hits from loaded units:
         for unit in self._manager.list_units():
             unit_id = unit.properties.Id
@@ -56,7 +59,11 @@ class SystemdUnits(object):
                 yield unit
 
         for missing_unit in manifest_units:
-            try:
-                yield self._manager.load_unit(missing_unit)
-            except:
-                logger.warn('Error loading "%s".', missing_unit, exc_info=True)
+            name = missing_unit.replace('.service', '')
+            if name not in timers:
+                try:
+                    yield self._manager.load_unit(missing_unit)
+                except:
+                    logger.warn('Error loading "%s".',
+                                missing_unit,
+                                exc_info=True)
