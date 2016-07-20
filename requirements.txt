@@ -8,4 +8,4 @@ jmespath==0.9.0
 mock==2.0.0
 pbr==1.9.1
 python-dateutil==2.5.3
-git+https://github.com/thepwagner/python-systemd.git
+git+https://github.com/pebble/python-systemd.git

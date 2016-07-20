@@ -48,6 +48,16 @@ class TestSystemdUnits(unittest.TestCase):
         self.systemd.start_units(self.manifest)
         self.unit.start.assert_not_called()
 
+    def test_start_units_skip_timers(self):
+        self.systemd._get_units = MagicMock(return_value=[self.unit,
+                                                          self.timer_service,
+                                                          self.timer_name])
+
+        self.systemd.start_units(self.manifest)
+
+        self.timer_service.start.assert_not_called()
+        self.timer_name.start.assert_called_with('replace')
+
     def test_stop_units(self):
         self.systemd._get_units = MagicMock(return_value=[self.unit])
         self.systemd.stop_units(self.manifest)
@@ -70,15 +80,15 @@ class TestSystemdUnits(unittest.TestCase):
 
     def test_get_units_load(self):
         self.manager.list_units.return_value = []
-        self.manager.load_unit.side_effect = [self.unit, self.timer_name]
+        self.manager.load_unit.side_effect = [self.unit, self.timer_service,
+                                              self.timer_name]
 
         units = [u for u in self.systemd._get_units(self.manifest)]
-        self.assertEquals(2, len(units))
-        self.assertEquals(self.unit, units[0])
-        self.assertEquals(self.timer_name, units[1])
+        self.assertEquals([self.unit, self.timer_service, self.timer_name],
+                          units)
         self.assertIn(call(SYSTEMD_SERVICE), self.manager.load_unit.mock_calls)
         self.assertIn(call(TIMER_NAME), self.manager.load_unit.mock_calls)
-        self.assertNotIn(call(TIMER_SERVICE), self.manager.load_unit.mock_calls)
+        self.assertIn(call(TIMER_SERVICE), self.manager.load_unit.mock_calls)
 
     def test_get_units_load_error(self):
         self.manager.list_units.return_value = []
@@ -86,3 +96,7 @@ class TestSystemdUnits(unittest.TestCase):
 
         units = [u for u in self.systemd._get_units(self.manifest)]
         self.assertEquals(0, len(units))
+
+    def test_get_timers(self):
+        timers = self.systemd._get_timers(self.manifest)
+        self.assertEqual(set(['bar']), timers)
