@@ -3,6 +3,7 @@ from setuptools import setup, find_packages
 requires = [
     'boto3==1.3.1',
     'botocore==1.4.13',
+    'click==6.2',
     'docutils==0.12',
     'funcsigs==1.0.2',
     'futures==3.0.5',

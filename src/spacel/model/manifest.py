@@ -36,9 +36,4 @@ class AgentManifest(object):
                     logger.warn('Invalid manifest: duplicate instance volume.')
                     return False
                 volume_ids.add(instance)
-
-        if not self.systemd:
-            logger.warn('Invalid manifest: no units provided.')
-            return False
-
         return True
