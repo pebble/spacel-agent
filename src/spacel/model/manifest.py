@@ -1,4 +1,7 @@
+import logging
 from spacel.model.volume import SpaceVolume
+
+logger = logging.getLogger('spacel')
 
 
 class AgentManifest(object):
@@ -25,11 +28,17 @@ class AgentManifest(object):
         volume_ids = set()
         for volume in self.volumes.values():
             if not volume.valid:
+                logger.warn('Invalid manifest: invalid volume.')
                 return False
             instance = volume.instance
             if instance is not None:
                 if instance in volume_ids:
+                    logger.warn('Invalid manifest: duplicate instance volume.')
                     return False
                 volume_ids.add(instance)
+
+        if not self.systemd:
+            logger.warn('Invalid manifest: no units provided.')
+            return False
 
         return True

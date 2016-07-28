@@ -23,8 +23,8 @@ class SshDb(object):
         users = set()
         service_paginator = self.dynamodb.get_paginator('scan')
         service_scan = service_paginator.paginate(
-                TableName=self.services_table,
-                AttributesToGet=['admins'])
+            TableName=self.services_table,
+            AttributesToGet=['admins'])
         for scan_page in service_scan:
             services = scan_page.get('Items', ())
             for service in services:
@@ -60,9 +60,15 @@ class SshDb(object):
             return []
 
         keys = set()
-        user_keys = [{'username': {'S': username}} for username in user_set]
-        for user in self._batch_get(self.users_table, user_keys, ['keys']):
-            for user_key in user.get('keys', {}).get('SS', ()):
+        user_items = self._batch_get(self.users_table,
+                                     [{'username': {'S': username}}
+                                      for username in user_set],
+                                     ['username', 'keys'])
+        for user in user_items:
+            ssh_keys = user.get('keys', {}).get('SS', ())
+            logger.debug('Fetched %i SSH keys for %s.', len(ssh_keys),
+                         user['username']['S'])
+            for user_key in ssh_keys:
                 plain_key = user_key.replace('ssh-rsa', '').strip()
                 if plain_key == key:
                     return user_key,

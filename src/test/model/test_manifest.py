@@ -33,10 +33,8 @@ class TestAgentManifest(unittest.TestCase):
         self.assertEquals(8, manifest.volumes['test'].size)
 
     def test_valid(self):
-        manifest = AgentManifest({'volumes': {
-            'test': {
-                'size': 8
-            }
+        manifest = AgentManifest({'systemd': {
+            'foo.service': {}
         }})
         self.assertTrue(manifest.valid)
 

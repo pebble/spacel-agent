@@ -67,8 +67,10 @@ class TestSshDb(MockedClientTest):
         self.dynamodb.batch_get_item.return_value = {
             'Responses': {
                 USERS_TABLE_NAME: [
-                    {'keys': {'SS': ['ssh-rsa 1', 'ssh-rsa 2']}},
-                    {'keys': {'SS': ['ssh-rsa 3', 'ssh-rsa 4']}},
+                    {'username': {'S': 'admin1'},
+                     'keys': {'SS': ['ssh-rsa 1', 'ssh-rsa 2']}},
+                    {'username': {'S': 'admin2'},
+                     'keys': {'SS': ['ssh-rsa 3', 'ssh-rsa 4']}},
                 ]
             }
         }
