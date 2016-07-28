@@ -12,9 +12,7 @@ class TestServices(unittest.TestCase):
         self._meta.az = 'us-east-1a'
         self._meta.instance_id = 'i-123456'
         self._meta.orbit = 'test-orbit'
-        self._meta.user_data = {
-            'systemd': {'foo.service': ''}
-        }
+        self._meta.user_data = {}
 
         self._signaller = MagicMock(spec=CloudFormationSignaller)
 
@@ -24,7 +22,11 @@ class TestServices(unittest.TestCase):
     def test_start_services_invalid(self, _, cf_factory, aws_meta_factory):
         aws_meta_factory.return_value = self._meta
         cf_factory.return_value = self._signaller
-        del self._meta.user_data['systemd']
+        # The same instance volume is assigned twice:
+        self._meta.user_data['volumes'] = {
+            'foo': {'instance': 0},
+            'bar': {'instance': 0}
+        }
 
         start_services()
 
