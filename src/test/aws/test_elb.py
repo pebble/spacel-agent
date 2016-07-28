@@ -11,7 +11,7 @@ class TestElbHealthCheck(MockedClientTest):
         super(TestElbHealthCheck, self).setUp()
         self.elb_health = ElbHealthCheck(self.clients, self.meta, 0.000001)
 
-        self.manifest.elb = ELB_NAME
+        self.manifest.elb = {'name': ELB_NAME}
 
     def test_health_no_elb(self):
         self.manifest.elb = None
@@ -22,7 +22,7 @@ class TestElbHealthCheck(MockedClientTest):
         self.elb.describe_instance_health.assert_not_called()
 
     def test_health_timeout(self):
-        self.manifest.elb_time = 0.01
+        self.manifest.elb['timeout'] = 0.01
 
         health = self.elb_health.health(self.manifest)
 

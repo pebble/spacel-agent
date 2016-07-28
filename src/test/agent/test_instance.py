@@ -12,19 +12,20 @@ class TestInstanceManager(unittest.TestCase):
                 'endpoint': 'localhost/',
                 'virtual_host': 'spacel-agent.com',
                 'protocol': 'http',
-                'forwarded_protocol': 'https'
+                'forwarded_protocol': 'https',
+                'timeout': 0.01
             }
         })
 
     def test_health(self):
         self.instance._check_health = MagicMock(return_value=True)
-        result = self.instance.health(self.manifest, timeout=0.01)
+        result = self.instance.health(self.manifest)
         self.assertEqual(result, True)
         self.assertEqual(self.instance._check_health.call_count, 1)
 
     def test_health_fail(self):
         self.instance._check_health = MagicMock(return_value=False)
-        result = self.instance.health(self.manifest, timeout=0.01)
+        result = self.instance.health(self.manifest)
         self.assertEqual(result, False)
         self.assertEqual(self.instance._check_health.call_count, 8)
 
