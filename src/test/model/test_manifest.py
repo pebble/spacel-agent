@@ -4,6 +4,7 @@ from spacel.model.manifest import AgentManifest
 
 INSTANCE_ID = 'i-123456'
 EIP_ALLOCATION = 'eip-123456'
+ELB_ID = 'elb-123456'
 
 
 class TestAgentManifest(unittest.TestCase):
@@ -58,3 +59,17 @@ class TestAgentManifest(unittest.TestCase):
         }})
 
         self.assertFalse(manifest.valid)
+
+    def test_elb_string(self):
+        manifest = AgentManifest({'elb': ELB_ID})
+
+        self.assertEquals(ELB_ID, manifest.elb.get('name'))
+
+    def test_elb_object(self):
+        manifest = AgentManifest({'elb': {'name': ELB_ID}})
+
+        self.assertEquals(ELB_ID, manifest.elb.get('name'))
+
+    def test_elb_empty(self):
+        manifest = AgentManifest({})
+        self.assertIsNone(manifest.elb)

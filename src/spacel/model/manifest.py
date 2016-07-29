@@ -14,6 +14,8 @@ class AgentManifest(object):
                         for label, vol_params in
                         params.get('volumes', {}).items()}
         self.elb = params.get('elb')
+        if isinstance(self.elb, str):
+            self.elb = {'name': self.elb}
         self.healthcheck = params.get('healthcheck', {})
 
     @property

@@ -1,37 +1,32 @@
 from botocore.exceptions import ClientError
 import logging
-import time
+
+from spacel.agent.healthcheck import BaseHealthCheck
 
 logger = logging.getLogger('spacel')
 
 
-class ElbHealthCheck(object):
-    def __init__(self, clients, meta):
+class ElbHealthCheck(BaseHealthCheck):
+    def __init__(self, clients, meta, back_off_scale=1):
+        super(ElbHealthCheck, self).__init__(back_off_scale)
         self._elb = clients.elb()
         self._instance_id = meta.instance_id
 
     def health(self, manifest):
-        if not manifest.elb:
+        elb = manifest.elb
+        if not elb:
             logger.debug('ELB not configured.')
             return True
 
-        for attempt in range(30):
-            logger.debug('Querying ELB, attempt #%d.', attempt)
-            state = self._instance_states(manifest)
-            if state == 'inservice':
-                logger.debug('Instance %s is healthy in %s.', self._instance_id,
-                             manifest.elb)
-                return True
-            time.sleep(5)
-        return False
+        return self._check(elb, self._elb_in_service, elb)
 
-    def _instance_states(self, manifest):
+    def _elb_in_service(self, elb):
         try:
             instance_health = self._elb.describe_instance_health(
-                    LoadBalancerName=manifest.elb,
-                    Instances=[{'InstanceId': self._instance_id}])
+                LoadBalancerName=elb['name'],
+                Instances=[{'InstanceId': self._instance_id}])
             for state in instance_health.get('InstanceStates', ()):
-                return state['State'].lower()
+                return state['State'].lower() == 'inservice'
         except ClientError:
             pass
-        return None
+        return False

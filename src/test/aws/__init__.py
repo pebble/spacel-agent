@@ -14,11 +14,13 @@ class MockedClientTest(unittest.TestCase):
         self.cloudformation = MagicMock()
         self.dynamodb = MagicMock()
         self.ec2 = MagicMock()
+        self.elb = MagicMock()
         self.clients = MagicMock(spec=ClientCache)
         self.clients.autoscaling.return_value = self.autoscaling
         self.clients.cloudformation.return_value = self.cloudformation
         self.clients.dynamodb.return_value = self.dynamodb
         self.clients.ec2.return_value = self.ec2
+        self.clients.elb.return_value = self.elb
         self.meta = MagicMock(spec=AwsMeta)
         self.meta.instance_id = INSTANCE_ID
         self.meta.az = AVAILABILITY_ZONE
