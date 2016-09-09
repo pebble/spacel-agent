@@ -4,6 +4,10 @@ from test.aws import MockedClientTest, INSTANCE_ID
 
 ELB_NAME = 'elb-123456'
 INSTANCE_IN_SERVICE = {'InstanceStates': [{'State': 'InService'}]}
+INSTANCE_NOT_REGISTERED = {'InstanceStates': [{
+    'State': 'OutOfService',
+    'Description': 'Instance is not currently registered with the LoadBalancer.'
+}]}
 
 
 class TestElbHealthCheck(MockedClientTest):
@@ -50,3 +54,33 @@ class TestElbHealthCheck(MockedClientTest):
 
         health = self.elb_health.health(self.manifest)
         self.assertTrue(health)
+
+    def test_health_register_instance(self):
+        self.elb.describe_instance_health.side_effect = [
+            INSTANCE_NOT_REGISTERED,
+            INSTANCE_IN_SERVICE]
+        register_exception = ClientError({'Error': {'Message': 'Kaboom'}},
+                                         'RegisterInstancesWithLoadBalancer')
+        self.elb.register_instances_with_load_balancer.side_effect = [
+            register_exception,
+            {'Instances': [{'InstanceId': INSTANCE_ID}]}]
+
+        health = self.elb_health.health(self.manifest)
+        self.assertTrue(health)
+
+        self.elb.register_instances_with_load_balancer.assert_called_once_with(
+            LoadBalancerName=ELB_NAME,
+            Instances=[{'InstanceId': INSTANCE_ID}]
+        )
+
+    def test_health_register_instance_failed(self):
+        self.manifest.elb['timeout'] = 0.01
+        self.manifest.elb['max_retries'] = 0
+        self.elb.describe_instance_health.return_value = INSTANCE_NOT_REGISTERED
+        register_exception = ClientError({'Error': {'Message': 'Kaboom'}},
+                                         'RegisterInstancesWithLoadBalancer')
+        self.elb.register_instances_with_load_balancer.side_effect = \
+            register_exception
+
+        health = self.elb_health.health(self.manifest)
+        self.assertFalse(health)

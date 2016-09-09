@@ -26,7 +26,23 @@ class ElbHealthCheck(BaseHealthCheck):
                 LoadBalancerName=elb['name'],
                 Instances=[{'InstanceId': self._instance_id}])
             for state in instance_health.get('InstanceStates', ()):
+                if 'not currently registered' in state.get('Description', ''):
+                    return self._register_instance_elb(elb)
                 return state['State'].lower() == 'inservice'
         except ClientError:
             pass
+        return False
+
+    def _register_instance_elb(self, elb):
+        try:
+            instances = self._elb.register_instances_with_load_balancer(
+                LoadBalancerName=elb['name'],
+                Instances=[{'InstanceId': self._instance_id}])
+            for instance in instances.get('Instances', ()):
+                if instance['InstanceId'] == self._instance_id:
+                    return self._check(elb, self._elb_in_service, elb)
+        except ClientError:
+            logger.warn('Unable to register instance %s with load balancer %s',
+                        self._instance_id, elb['name'])
+            logger.error(ClientError.message)
         return False
