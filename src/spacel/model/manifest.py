@@ -17,6 +17,7 @@ class AgentManifest(object):
         if isinstance(self.elb, str):
             self.elb = {'name': self.elb}
         self.healthcheck = params.get('healthcheck', {})
+        self.tags = params.get('tags', ())
 
     @property
     def all_files(self):

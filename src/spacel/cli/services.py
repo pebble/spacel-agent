@@ -3,7 +3,7 @@ import os
 
 from spacel.agent import FileWriter, SystemdUnits, InstanceManager
 from spacel.aws import (AwsMeta, ClientCache, CloudFormationSignaller,
-                        ElbHealthCheck, ElasticIpBinder)
+                        ElbHealthCheck, ElasticIpBinder, TagWriter)
 from spacel.log import setup_logging
 from spacel.model import AgentManifest
 from spacel.volumes import VolumeBinder
@@ -46,12 +46,14 @@ def start_services():
     cf = CloudFormationSignaller(clients, meta.instance_id)
     ebs = VolumeBinder(clients, meta)
     elb = ElbHealthCheck(clients, meta)
+    tag = TagWriter(clients, meta)
 
     status = 'SUCCESS'
     manifest = AgentManifest(meta.user_data)
 
     if manifest.valid:
         # Act on manifest:
+        tag.update(manifest)
         for volume in manifest.volumes.values():
             ebs.attach(volume)
             # TODO: fail if attaching any volume fails.
