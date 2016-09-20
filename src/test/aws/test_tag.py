@@ -21,7 +21,7 @@ class TestTagWriter(MockedClientTest):
         )
 
     def test_update_empty(self):
-        self.manifest.tags = []
+        self.manifest.tags = ()
 
         self.tag_writer.update(self.manifest)
 
