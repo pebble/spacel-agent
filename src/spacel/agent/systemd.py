@@ -35,6 +35,7 @@ class SystemdUnits(object):
             try:
                 logger.debug('Starting "%s".', unit_id)
                 unit.start('replace')
+                logger.debug('Started "%s".', unit_id)
             except:
                 logger.warn('Error starting "%s".', unit_id, exc_info=True)
 

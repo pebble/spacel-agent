@@ -26,14 +26,21 @@ class ElbHealthCheck(BaseHealthCheck):
                 LoadBalancerName=elb['name'],
                 Instances=[{'InstanceId': self._instance_id}])
             for state in instance_health.get('InstanceStates', ()):
+                # This happens when the instance _was_ registered to the ELB
+                # but is not any more
                 if 'not currently registered' in state.get('Description', ''):
                     return self._register_instance_elb(elb)
                 return state['State'].lower() == 'inservice'
-        except ClientError:
+        except ClientError as e:
+            e_message = e.response['Error'].get('Message', '')
+            if 'Could not find EC2 instance' in e_message:
+                # This happens when the instance was never registered to the ELB
+                return self._register_instance_elb(elb)
             pass
         return False
 
     def _register_instance_elb(self, elb):
+        logger.info('Instance not registered with ELB, registering...')
         try:
             instances = self._elb.register_instances_with_load_balancer(
                 LoadBalancerName=elb['name'],

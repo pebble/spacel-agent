@@ -1,4 +1,6 @@
 from botocore.exceptions import ClientError
+from mock import MagicMock
+
 from spacel.aws.elb import ElbHealthCheck
 from test.aws import MockedClientTest, INSTANCE_ID
 
@@ -8,6 +10,11 @@ INSTANCE_NOT_REGISTERED = {'InstanceStates': [{
     'State': 'OutOfService',
     'Description': 'Instance is not currently registered with the LoadBalancer.'
 }]}
+
+UNKNOWN_INSTANCE = ClientError(
+    {'Error': {'Message': 'Could not find EC2 instance i-123456'}},
+    'DescribeInstanceHealth'
+)
 
 
 class TestElbHealthCheck(MockedClientTest):
@@ -72,6 +79,18 @@ class TestElbHealthCheck(MockedClientTest):
             LoadBalancerName=ELB_NAME,
             Instances=[{'InstanceId': INSTANCE_ID}]
         )
+
+    def test_health_register_instance_unknown(self):
+        self.elb_health._register_instance_elb = MagicMock()
+        self.elb.describe_instance_health.side_effect = [
+            UNKNOWN_INSTANCE,
+            INSTANCE_IN_SERVICE]
+
+        health = self.elb_health.health(self.manifest)
+        self.assertTrue(health)
+
+        self.elb_health._register_instance_elb.assert_called_with(
+            self.manifest.elb)
 
     def test_health_register_instance_failed(self):
         self.manifest.elb['timeout'] = 0.01
