@@ -48,8 +48,8 @@ class ElbHealthCheck(BaseHealthCheck):
             for instance in instances.get('Instances', ()):
                 if instance['InstanceId'] == self._instance_id:
                     return self._check(elb, self._elb_in_service, elb)
-        except ClientError:
+        except ClientError as e:
             logger.warn('Unable to register instance %s with load balancer %s',
                         self._instance_id, elb['name'])
-            logger.error(ClientError.message)
+            logger.error('%s', e)
         return False
