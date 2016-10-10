@@ -2,6 +2,7 @@ from botocore.exceptions import ClientError
 import logging
 
 from spacel.agent.healthcheck import BaseHealthCheck
+from spacel.aws.helpers import read_file
 
 logger = logging.getLogger('spacel')
 
@@ -16,6 +17,14 @@ class ElbHealthCheck(BaseHealthCheck):
         elb = manifest.elb
         if not elb:
             logger.debug('ELB not configured.')
+            return True
+
+        path = elb.get('path')
+        if path:
+            elb['name'] = read_file(path, None)
+
+        if not elb.get('name'):
+            logger.debug('ELB name not set.')
             return True
 
         return self._check(elb, self._elb_in_service, elb)

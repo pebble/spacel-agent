@@ -5,6 +5,7 @@ from spacel.aws.elb import ElbHealthCheck
 from test.aws import MockedClientTest, INSTANCE_ID
 
 ELB_NAME = 'elb-123456'
+ELB_NAME_ALT = 'test'
 INSTANCE_IN_SERVICE = {'InstanceStates': [{'State': 'InService'}]}
 INSTANCE_NOT_REGISTERED = {'InstanceStates': [{
     'State': 'OutOfService',
@@ -32,6 +33,14 @@ class TestElbHealthCheck(MockedClientTest):
         self.assertTrue(health)
         self.elb.describe_instance_health.assert_not_called()
 
+    def test_health_no_elb_name(self):
+        self.manifest.elb['name'] = None
+
+        health = self.elb_health.health(self.manifest)
+
+        self.assertTrue(health)
+        self.elb.describe_instance_health.assert_not_called()
+
     def test_health_timeout(self):
         self.manifest.elb['timeout'] = 0.01
 
@@ -39,6 +48,25 @@ class TestElbHealthCheck(MockedClientTest):
 
         self.assertFalse(health)
         self.assertTrue(self.elb.describe_instance_health.call_count > 1)
+
+    def test_health_elb_path(self):
+        self.manifest.elb['path'] = 'test/open.test'
+        self.elb.describe_instance_health.return_value = INSTANCE_IN_SERVICE
+
+        health = self.elb_health.health(self.manifest)
+
+        self.assertTrue(health)
+        self.elb.describe_instance_health.assert_called_once_with(
+            LoadBalancerName=ELB_NAME_ALT,
+            Instances=[{'InstanceId': INSTANCE_ID}]
+        )
+
+    def test_health_elb_path_empty(self):
+        self.manifest.elb['path'] = 'test'
+
+        health = self.elb_health.health(self.manifest)
+
+        self.assertTrue(health)
 
     def test_health_healthy(self):
         self.elb.describe_instance_health.return_value = INSTANCE_IN_SERVICE
