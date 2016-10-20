@@ -38,9 +38,9 @@ class TestCloudFormationSignaller(MockedClientTest):
                 Status='SUCCESS')
 
     def test_notify_exception(self):
-        self.cloudformation.signal_resource.side_effect = Exception('Kaboom')
-        self.assertRaises(Exception, self.signaller.notify,
-                          self.manifest)
+        client_error = ClientError({'Error': {'Code': 'Kaboom'}}, '')
+        self.cloudformation.signal_resource.side_effect = client_error
+        self.assertRaises(ClientError, self.signaller.notify, self.manifest)
         self.cloudformation.signal_resource.assert_called_with(
                 StackName=STACK_NAME,
                 LogicalResourceId=RESOURCE_NAME,

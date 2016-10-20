@@ -1,7 +1,8 @@
 import click
 import os
 
-from spacel.agent import FileWriter, SystemdUnits, InstanceManager
+from spacel.agent import (ApplicationEnvironment, FileWriter, SystemdUnits,
+                          InstanceManager)
 from spacel.aws import (AwsMeta, ClientCache, CloudFormationSignaller,
                         ElbHealthCheck, ElasticIpBinder, TagWriter)
 from spacel.log import setup_logging
@@ -39,7 +40,8 @@ def start_services():
     clients = ClientCache(meta.region)
 
     # Dependency injection party!
-    file_writer = FileWriter()
+    app_env = ApplicationEnvironment(clients)
+    file_writer = FileWriter(app_env)
     systemd = SystemdUnits(Manager())
     instance = InstanceManager()
     eip = ElasticIpBinder(clients, meta)

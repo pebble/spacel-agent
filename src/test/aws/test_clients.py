@@ -40,3 +40,18 @@ class TestClientCache(unittest.TestCase):
     def test_elb(self, mock_boto3):
         self.clients.elb()
         mock_boto3.client.assert_called_once_with('elb', REGION)
+
+    @patch('spacel.aws.clients.boto3')
+    def test_elasticache(self, mock_boto3):
+        self.clients.elasticache()
+        mock_boto3.client.assert_called_once_with('elasticache', REGION)
+
+    @patch('spacel.aws.clients.boto3')
+    def test_kms(self, mock_boto3):
+        self.clients.kms(REGION)
+        mock_boto3.client.assert_called_once_with('kms', REGION)
+
+    @patch('spacel.aws.clients.boto3')
+    def test_rds(self, mock_boto3):
+        self.clients.rds(REGION)
+        mock_boto3.client.assert_called_once_with('rds', REGION)

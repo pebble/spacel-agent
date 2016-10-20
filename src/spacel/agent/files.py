@@ -10,7 +10,8 @@ class FileWriter(object):
     Writes files from manifests to disk.
     """
 
-    def __init__(self, home='/files', systemd='/etc/systemd/system'):
+    def __init__(self, app_env, home='/files', systemd='/etc/systemd/system'):
+        self._app_env = app_env
         self._home = home
         self._systemd = systemd
 
@@ -20,12 +21,21 @@ class FileWriter(object):
         :param manifest:  Manifest.
         :return: None
         """
+        common_env = self._app_env.common_environment(manifest)
+        services = set()
+        environments = set()
         for fn, file_data in manifest.all_files.items():
             file_path = os.path.join(self._home, fn)
 
             body = file_data['body']
             body = body.decode('base64')
             # TODO: decryption, KMS?
+
+            if file_path.endswith('.env'):
+                environments.add(fn.replace('.env', ''))
+                body = self._app_env.environment(body, common_env)
+            elif file_path.endswith('.service'):
+                services.add(fn.replace('.service', ''))
 
             logger.debug('Writing "%s".', file_path)
             with open(file_path, 'w') as out:
@@ -36,6 +46,14 @@ class FileWriter(object):
                 file_mode = int(mode, 8)
                 logger.debug('Setting "%s" to %s.', file_path, mode)
                 os.chmod(file_path, file_mode)
+
+        services_without_environment = services - environments
+        if services_without_environment:
+            common_env = self._app_env.environment('', common_env)
+            for service in services_without_environment:
+                env_path = os.path.join(self._home, '%s.env' % service)
+                with open(env_path, 'w') as out:
+                    out.write(common_env)
 
         for fn in manifest.systemd.keys():
             file_path = os.path.join(self._home, fn)

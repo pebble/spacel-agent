@@ -18,6 +18,7 @@ class AgentManifest(object):
             self.elb = {'name': self.elb}
         self.healthcheck = params.get('healthcheck', {})
         self.tags = params.get('tags', ())
+        self.caches = params.get('caches', {})
 
     @property
     def all_files(self):

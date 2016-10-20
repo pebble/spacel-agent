@@ -46,11 +46,34 @@ class ClientCache(object):
         """
         return self._client('elb')
 
-    def _client(self, client_type):
+    def elasticache(self):
+        """
+        :return: ElastiCache client.
+        """
+        return self._client('elasticache')
+
+    def kms(self, region):
+        """
+        Get KMS client.
+        :param region: Region.
+        :return:  KMS Client.
+        """
+        return self._client('kms', region)
+
+    def rds(self, region):
+        """
+        Get RDS client.
+        :param region:  Region.
+        :return:  RDS client.
+        """
+        return self._client('rds', region)
+
+    def _client(self, client_type, region=None):
         cached = self._clients.get(client_type)
         if cached:
             return cached
-        logger.debug('Connecting to %s in %s.', client_type, self.region)
-        client = boto3.client(client_type, self.region)
+        region = region or self.region
+        logger.debug('Connecting to %s in %s.', client_type, region)
+        client = boto3.client(client_type, region)
         self._clients[client_type] = client
         return client
