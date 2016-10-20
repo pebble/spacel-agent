@@ -4,7 +4,7 @@ import os
 from spacel.agent import (ApplicationEnvironment, FileWriter, SystemdUnits,
                           InstanceManager)
 from spacel.aws import (AwsMeta, ClientCache, CloudFormationSignaller,
-                        ElbHealthCheck, ElasticIpBinder, TagWriter)
+                        ElbHealthCheck, ElasticIpBinder, KmsCrypto, TagWriter)
 from spacel.log import setup_logging
 from spacel.model import AgentManifest
 from spacel.volumes import VolumeBinder
@@ -40,8 +40,9 @@ def start_services():
     clients = ClientCache(meta.region)
 
     # Dependency injection party!
+    kms = KmsCrypto(clients)
     app_env = ApplicationEnvironment(clients)
-    file_writer = FileWriter(app_env)
+    file_writer = FileWriter(app_env, kms)
     systemd = SystemdUnits(Manager())
     instance = InstanceManager()
     eip = ElasticIpBinder(clients, meta)
