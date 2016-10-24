@@ -20,6 +20,7 @@ class AgentManifest(object):
         self.tags = params.get('tags', ())
         self.caches = params.get('caches', {})
         self.logging = params.get('logging', {})
+        self.databases = params.get('databases', {})
 
     @property
     def all_files(self):

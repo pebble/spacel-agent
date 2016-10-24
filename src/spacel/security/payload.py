@@ -11,13 +11,16 @@ class EncryptedPayload(object):
         self.encoding = encoding
 
     def json(self):
-        return json.dumps({
+        return json.dumps(self.obj(), sort_keys=True)
+
+    def obj(self):
+        return {
             'iv': b64encode(self.iv),
             'key': b64encode(self.key),
             'key_region': self.key_region,
             'ciphertext': b64encode(self.ciphertext),
             'encoding': self.encoding,
-        }, sort_keys=True)
+        }
 
     @staticmethod
     def from_json(json_string):
