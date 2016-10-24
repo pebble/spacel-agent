@@ -1,6 +1,7 @@
 import errno
 import logging
 import os
+from spacel.security import EncryptedPayload
 
 logger = logging.getLogger('spacel')
 
@@ -10,8 +11,10 @@ class FileWriter(object):
     Writes files from manifests to disk.
     """
 
-    def __init__(self, app_env, home='/files', systemd='/etc/systemd/system'):
+    def __init__(self, app_env, kms, home='/files',
+                 systemd='/etc/systemd/system'):
         self._app_env = app_env
+        self._kms = kms
         self._home = home
         self._systemd = systemd
 
@@ -27,9 +30,16 @@ class FileWriter(object):
         for fn, file_data in manifest.all_files.items():
             file_path = os.path.join(self._home, fn)
 
-            body = file_data['body']
-            body = body.decode('base64')
-            # TODO: decryption, KMS?
+            body = None
+            if 'ciphertext' in file_data:
+                payload = EncryptedPayload.from_obj(file_data)
+                if payload:
+                    body = self._kms.decrypt_payload(payload)
+
+            # Fallback to plaintext:
+            if not body:
+                body = file_data['body']
+                body = body.decode('base64')
 
             if file_path.endswith('.env'):
                 environments.add(fn.replace('.env', ''))
