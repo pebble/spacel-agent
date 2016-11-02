@@ -1,0 +1,6 @@
+{
+	"dockerImage": "pebbletech/spacel-agent",
+	"dockerRegistry": "hub.docker.com",
+	"junitReport": "**/build/nosetests.xml",
+	"coberturaReport": "**/build/coverage.xml"
+}
