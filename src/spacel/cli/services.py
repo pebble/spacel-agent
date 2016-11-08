@@ -1,6 +1,7 @@
-import click
 import os
 import sys
+
+import click
 
 from spacel.agent import (ApplicationEnvironment, FileWriter, SystemdUnits,
                           InstanceManager)
@@ -39,44 +40,50 @@ def start_services():
     # Get context:
     meta = AwsMeta()
     clients = ClientCache(meta.region)
+    cf = CloudFormationSignaller(clients, meta.instance_id)
+    manifest = AgentManifest(meta.user_data)
 
+    if manifest.valid:
+        systemd = SystemdUnits(Manager())
+        status = process_manifest(clients, meta, systemd, manifest)
+        if not status:
+            systemd.log_units(manifest)
+    else:
+        status = False
+
+    cf_status = status and 'SUCCESS' or 'FAILURE'
+    cf.notify(manifest, status=cf_status)
+
+    if not status:
+        sys.exit(1)
+
+
+def process_manifest(clients, meta, systemd, manifest):
     # Dependency injection party!
     kms = KmsCrypto(clients)
     app_env = ApplicationEnvironment(clients)
     file_writer = FileWriter(app_env, kms)
-    systemd = SystemdUnits(Manager())
     instance = InstanceManager()
     eip = ElasticIpBinder(clients, meta)
-    cf = CloudFormationSignaller(clients, meta.instance_id)
     ebs = VolumeBinder(clients, meta)
     elb = ElbHealthCheck(clients, meta)
     tag = TagWriter(clients, meta)
 
-    status = 'SUCCESS'
-    manifest = AgentManifest(meta.user_data)
+    # Act on manifest:
+    tag.update(manifest)
+    for volume in manifest.volumes.values():
+        ebs.attach(volume)
+        # TODO: fail if attaching any volume fails.
+    if not eip.assign_from(manifest):
+        return False
 
-    if manifest.valid:
-        # Act on manifest:
-        tag.update(manifest)
-        for volume in manifest.volumes.values():
-            ebs.attach(volume)
-            # TODO: fail if attaching any volume fails.
-        if not eip.assign_from(manifest):
-            status = 'FAILURE'
+    file_writer.write_files(manifest)
+    if not systemd.start_units(manifest):
+        return False
 
-        file_writer.write_files(manifest)
-        if not systemd.start_units(manifest):
-            status = 'FAILURE'
+    if not elb.health(manifest):
+        return False
+    if not instance.health(manifest):
+        return False
 
-        if not elb.health(manifest):
-            status = 'FAILURE'
-        if not instance.health(manifest):
-            status = 'FAILURE'
-    else:
-        status = 'FAILURE'
-
-    cf.notify(manifest, status=status)
-
-    if status != 'SUCCESS':
-        systemd.log_units(manifest)
-        sys.exit(1)
+    return True

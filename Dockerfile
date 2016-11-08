@@ -1,20 +1,22 @@
-FROM alpine:3.4
+FROM debian:jessie
 
 COPY requirements.txt /app/requirements.txt
 
-RUN apk add --update \
+RUN apt-get update && apt-get -y --no-install-recommends install \
     git \
     g++ \
     python \
     python-dev \
-    py-pip \
-    py-dbus \
+    python-pip \
+    python-dbus \
   && pip install -r /app/requirements.txt \
-  && apk del \
+  && apt-get remove --purge --auto-remove -y \
+     gcc \
      git \
      g++ \
+     perl-modules \
      python-dev \
-  && rm -rf /var/cache/apk/*
+  && rm -rf /tmp/* /var/tmp/
 
 COPY src/ /app
 WORKDIR /app
