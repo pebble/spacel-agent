@@ -1,5 +1,4 @@
 import logging
-import time
 import urllib2
 import sys
 from spacel.agent.healthcheck import BaseHealthCheck
@@ -51,8 +50,10 @@ class InstanceManager(BaseHealthCheck):
             req.add_header('X-Forwarded-Proto', str(forwarded_protocol))
             resp = urllib2.urlopen(req)
             return resp.getcode() == 200
-        except:
-            e = sys.exc_info()[0]
+
+        except urllib2.URLError as e:
+            logger.error(e.reason)
+        except Exception as e:
             logger.info('Failed to execute healthcheck on "%s"', url)
-            logger.exception(e)
+            logger.error(e.message)
             return False

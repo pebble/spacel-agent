@@ -1,7 +1,8 @@
 import logging
+import subprocess
 import os
 
-logger = logging.getLogger('spacel')
+logger = logging.getLogger('spacel.agent.systemd')
 
 
 class SystemdUnits(object):
@@ -55,6 +56,18 @@ class SystemdUnits(object):
                 unit.stop('replace')
             except:
                 logger.warn('Error stopping "%s".', unit_id, exc_info=True)
+
+    @staticmethod
+    def log_units(manifest):
+        """
+        Log `systemctl status` for each service/timer in a manifest.
+        :param manifest: Manifest.
+        :return: None
+        """
+        for unit in manifest.systemd.keys():
+            status_cmd = 'systemctl status -l --no-pager %s || exit 0' % unit
+            status = subprocess.check_output(status_cmd, shell=True)
+            logger.info('Systemd status:\n%s', status)
 
     def _get_units(self, manifest):
         manifest_units = set(manifest.systemd.keys())
