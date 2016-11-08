@@ -16,10 +16,11 @@ class TestServices(unittest.TestCase):
 
         self._signaller = MagicMock(spec=CloudFormationSignaller)
 
+    @patch('spacel.cli.services.sys')
     @patch('spacel.cli.services.AwsMeta')
     @patch('spacel.cli.services.CloudFormationSignaller')
     @patch('spacel.cli.services.Manager')
-    def test_start_services_invalid(self, _, cf_factory, aws_meta_factory):
+    def test_start_services_invalid(self, _, cf_factory, aws_meta_factory, sys):
         aws_meta_factory.return_value = self._meta
         cf_factory.return_value = self._signaller
         # The same instance volume is assigned twice:
@@ -31,13 +32,15 @@ class TestServices(unittest.TestCase):
         start_services()
 
         self._signaller.notify.assert_called_with(ANY, status='FAILURE')
+        sys.exit.assert_called_with(1)
 
+    @patch('spacel.cli.services.sys')
     @patch('spacel.cli.services.AwsMeta')
     @patch('spacel.cli.services.CloudFormationSignaller')
     @patch('spacel.cli.services.FileWriter')
     @patch('spacel.cli.services.Manager')
     def test_start_services_valid(self, _, writer_factory, cf_factory,
-                                  aws_meta_factory):
+                                  aws_meta_factory, sys):
         aws_meta_factory.return_value = self._meta
         cf_factory.return_value = self._signaller
         writer_factory.return_value = MagicMock()
@@ -45,6 +48,7 @@ class TestServices(unittest.TestCase):
         start_services()
 
         self._signaller.notify.assert_called_with(ANY, status='SUCCESS')
+        sys.exit.assert_not_called()
 
     @patch('spacel.cli.services.AwsMeta')
     @patch('spacel.cli.services.CloudFormationSignaller')
@@ -70,13 +74,14 @@ class TestServices(unittest.TestCase):
 
         self.assertEquals(volume_binder.attach.call_count, 1)
 
+    @patch('spacel.cli.services.sys')
     @patch('spacel.cli.services.AwsMeta')
     @patch('spacel.cli.services.CloudFormationSignaller')
     @patch('spacel.cli.services.ElasticIpBinder')
     @patch('spacel.cli.services.FileWriter')
     @patch('spacel.cli.services.Manager')
     def test_start_services_valid_eip_fail(self, _, writer_factory, eip_factory,
-                                           cf_factory, aws_meta_factory):
+                                           cf_factory, aws_meta_factory, sys):
         aws_meta_factory.return_value = self._meta
         cf_factory.return_value = self._signaller
         writer_factory.return_value = MagicMock()
@@ -90,14 +95,16 @@ class TestServices(unittest.TestCase):
 
         self.assertEquals(eip_binder.assign_from.call_count, 1)
         self._signaller.notify.assert_called_with(ANY, status='FAILURE')
+        sys.exit.assert_called_with(1)
 
+    @patch('spacel.cli.services.sys')
     @patch('spacel.cli.services.AwsMeta')
     @patch('spacel.cli.services.CloudFormationSignaller')
     @patch('spacel.cli.services.ElbHealthCheck')
     @patch('spacel.cli.services.FileWriter')
     @patch('spacel.cli.services.Manager')
     def test_start_services_valid_elb_fail(self, _, writer_factory, elb_factory,
-                                           cf_factory, aws_meta_factory):
+                                           cf_factory, aws_meta_factory, sys):
         aws_meta_factory.return_value = self._meta
         cf_factory.return_value = self._signaller
         writer_factory.return_value = MagicMock()
@@ -109,7 +116,9 @@ class TestServices(unittest.TestCase):
 
         self.assertEquals(elb_health_check.health.call_count, 1)
         self._signaller.notify.assert_called_with(ANY, status='FAILURE')
+        sys.exit.assert_called_with(1)
 
+    @patch('spacel.cli.services.sys')
     @patch('spacel.cli.services.AwsMeta')
     @patch('spacel.cli.services.CloudFormationSignaller')
     @patch('spacel.cli.services.SystemdUnits')
@@ -117,7 +126,7 @@ class TestServices(unittest.TestCase):
     @patch('spacel.cli.services.Manager')
     def test_start_services_valid_systemd_fail(self, _, writer_factory,
                                                systemd_factory, cf_factory,
-                                               aws_meta_factory):
+                                               aws_meta_factory, sys):
         aws_meta_factory.return_value = self._meta
         cf_factory.return_value = self._signaller
         writer_factory.return_value = MagicMock()
@@ -129,7 +138,9 @@ class TestServices(unittest.TestCase):
 
         self.assertEquals(systemd_units.start_units.call_count, 1)
         self._signaller.notify.assert_called_with(ANY, status='FAILURE')
+        sys.exit.assert_called_with(1)
 
+    @patch('spacel.cli.services.sys')
     @patch('spacel.cli.services.AwsMeta')
     @patch('spacel.cli.services.CloudFormationSignaller')
     @patch('spacel.cli.services.FileWriter')
@@ -137,7 +148,7 @@ class TestServices(unittest.TestCase):
     @patch('spacel.cli.services.Manager')
     def test_start_services_valid_instance_fail(self, _, instance_factory,
                                                 writer_factory, cf_factory,
-                                                aws_meta_factory):
+                                                aws_meta_factory, sys):
         aws_meta_factory.return_value = self._meta
         cf_factory.return_value = self._signaller
         writer_factory.return_value = MagicMock()
@@ -149,3 +160,4 @@ class TestServices(unittest.TestCase):
 
         self.assertEquals(instance_health_check.health.call_count, 1)
         self._signaller.notify.assert_called_with(ANY, status='FAILURE')
+        sys.exit.assert_called_with(1)

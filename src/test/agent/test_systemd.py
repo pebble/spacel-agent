@@ -1,5 +1,5 @@
 import unittest
-from mock import MagicMock, call
+from mock import MagicMock, call, patch
 from spacel.model import AgentManifest
 from spacel.agent.systemd import SystemdUnits
 
@@ -100,3 +100,9 @@ class TestSystemdUnits(unittest.TestCase):
     def test_get_timers(self):
         timers = self.systemd._get_timers(self.manifest)
         self.assertEqual(set(['bar']), timers)
+
+    @patch('spacel.agent.systemd.subprocess')
+    def test_log_units(self, mock_subprocess):
+        self.systemd.log_units(self.manifest)
+
+        self.assertEquals(3, mock_subprocess.check_output.call_count)

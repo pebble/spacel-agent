@@ -1,5 +1,6 @@
 import click
 import os
+import sys
 
 from spacel.agent import (ApplicationEnvironment, FileWriter, SystemdUnits,
                           InstanceManager)
@@ -75,3 +76,7 @@ def start_services():
         status = 'FAILURE'
 
     cf.notify(manifest, status=status)
+
+    if status != 'SUCCESS':
+        systemd.log_units(manifest)
+        sys.exit(1)
