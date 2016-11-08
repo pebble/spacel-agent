@@ -112,6 +112,26 @@ class TestServices(unittest.TestCase):
 
     @patch('spacel.cli.services.AwsMeta')
     @patch('spacel.cli.services.CloudFormationSignaller')
+    @patch('spacel.cli.services.SystemdUnits')
+    @patch('spacel.cli.services.FileWriter')
+    @patch('spacel.cli.services.Manager')
+    def test_start_services_valid_systemd_fail(self, _, writer_factory,
+                                               systemd_factory, cf_factory,
+                                               aws_meta_factory):
+        aws_meta_factory.return_value = self._meta
+        cf_factory.return_value = self._signaller
+        writer_factory.return_value = MagicMock()
+        systemd_units = MagicMock()
+        systemd_units.start_units.return_value = False
+        systemd_factory.return_value = systemd_units
+
+        start_services()
+
+        self.assertEquals(systemd_units.start_units.call_count, 1)
+        self._signaller.notify.assert_called_with(ANY, status='FAILURE')
+
+    @patch('spacel.cli.services.AwsMeta')
+    @patch('spacel.cli.services.CloudFormationSignaller')
     @patch('spacel.cli.services.FileWriter')
     @patch('spacel.cli.services.InstanceManager')
     @patch('spacel.cli.services.Manager')

@@ -32,20 +32,20 @@ class TestSystemdUnits(unittest.TestCase):
     def test_start_units(self):
         self.systemd._get_units = MagicMock(return_value=[self.unit])
 
-        self.systemd.start_units(self.manifest)
+        self.assertEqual(self.systemd.start_units(self.manifest), True)
         self.unit.start.assert_called_with('replace')
 
     def test_start_units_error(self):
         self.systemd._get_units = MagicMock(return_value=[self.unit])
         self.unit.start.side_effect = Exception()
 
-        self.systemd.start_units(self.manifest)
+        self.assertEqual(self.systemd.start_units(self.manifest), False)
 
     def test_start_units_already_running(self):
         self.systemd._get_units = MagicMock(return_value=[self.unit])
         self.unit.properties.ActiveState = 'active'
 
-        self.systemd.start_units(self.manifest)
+        self.assertEqual(self.systemd.start_units(self.manifest), True)
         self.unit.start.assert_not_called()
 
     def test_start_units_skip_timers(self):
@@ -53,7 +53,7 @@ class TestSystemdUnits(unittest.TestCase):
                                                           self.timer_service,
                                                           self.timer_name])
 
-        self.systemd.start_units(self.manifest)
+        self.assertEqual(self.systemd.start_units(self.manifest), True)
 
         self.timer_service.start.assert_not_called()
         self.timer_name.start.assert_called_with('replace')

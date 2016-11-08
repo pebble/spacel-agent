@@ -64,7 +64,8 @@ def start_services():
             status = 'FAILURE'
 
         file_writer.write_files(manifest)
-        systemd.start_units(manifest)
+        if not systemd.start_units(manifest):
+            status = 'FAILURE'
 
         if not elb.health(manifest):
             status = 'FAILURE'

@@ -38,6 +38,9 @@ class SystemdUnits(object):
                 logger.debug('Started "%s".', unit_id)
             except:
                 logger.warn('Error starting "%s".', unit_id, exc_info=True)
+                return False
+
+        return True
 
     def stop_units(self, manifest):
         """
