@@ -55,3 +55,8 @@ class TestClientCache(unittest.TestCase):
     def test_rds(self, mock_boto3):
         self.clients.rds(REGION)
         mock_boto3.client.assert_called_once_with('rds', REGION)
+
+    @patch('spacel.aws.clients.boto3')
+    def test_logs(self, mock_boto3):
+        self.clients.logs()
+        mock_boto3.client.assert_called_once_with('logs', REGION)

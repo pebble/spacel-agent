@@ -18,39 +18,42 @@ class ClientCache(object):
         Get AutoScaling client.
         :return: AutoScaling client.
         """
-        return self._client('autoscaling')
+        return self.client('autoscaling')
 
     def cloudformation(self):
         """
         Get CloudFormation client.
         :return: CloudFormation client.
         """
-        return self._client('cloudformation')
+        return self.client('cloudformation')
 
     def dynamodb(self):
         """
         Get DynamoDb client.
         :return: DynamoDb client.
         """
-        return self._client('dynamodb')
+        return self.client('dynamodb')
 
     def ec2(self):
         """
+        Get EC2 client.
         :return: EC2 client.
         """
-        return self._client('ec2')
+        return self.client('ec2')
 
     def elb(self):
         """
+        Get ELB client.
         :return: ELB client.
         """
-        return self._client('elb')
+        return self.client('elb')
 
     def elasticache(self):
         """
+        Get ElastiCache client.
         :return: ElastiCache client.
         """
-        return self._client('elasticache')
+        return self.client('elasticache')
 
     def kms(self, region):
         """
@@ -58,7 +61,7 @@ class ClientCache(object):
         :param region: Region.
         :return:  KMS Client.
         """
-        return self._client('kms', region)
+        return self.client('kms', region)
 
     def rds(self, region):
         """
@@ -66,14 +69,21 @@ class ClientCache(object):
         :param region:  Region.
         :return:  RDS client.
         """
-        return self._client('rds', region)
+        return self.client('rds', region)
 
-    def _client(self, client_type, region=None):
-        cached = self._clients.get(client_type)
+    def logs(self):
+        """
+        Get CloudWatchLogs client.
+        :return: CloudWatchLogs client.
+        """
+        return self.client('logs')
+
+    def client(self, service_name, region=None):
+        cached = self._clients.get(service_name)
         if cached:
             return cached
         region = region or self.region
-        logger.debug('Connecting to %s in %s.', client_type, region)
-        client = boto3.client(client_type, region)
-        self._clients[client_type] = client
+        logger.debug('Connecting to %s in %s.', service_name, region)
+        client = boto3.client(service_name, region)
+        self._clients[service_name] = client
         return client

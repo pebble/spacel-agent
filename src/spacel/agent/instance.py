@@ -53,6 +53,7 @@ class InstanceManager(BaseHealthCheck):
 
         except urllib2.URLError as e:
             logger.error(e.reason)
+            return False
         except Exception as e:
             logger.info('Failed to execute healthcheck on "%s"', url)
             logger.error(e.message)

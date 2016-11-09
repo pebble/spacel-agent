@@ -7,7 +7,7 @@ from spacel.agent import (ApplicationEnvironment, FileWriter, SystemdUnits,
                           InstanceManager)
 from spacel.aws import (AwsMeta, ClientCache, CloudFormationSignaller,
                         ElbHealthCheck, ElasticIpBinder, KmsCrypto, TagWriter)
-from spacel.log import setup_logging
+from spacel.log import setup_logging, setup_watchtower
 from spacel.model import AgentManifest
 from spacel.volumes import VolumeBinder
 
@@ -40,8 +40,10 @@ def start_services():
     # Get context:
     meta = AwsMeta()
     clients = ClientCache(meta.region)
-    cf = CloudFormationSignaller(clients, meta.instance_id)
     manifest = AgentManifest(meta.user_data)
+    setup_watchtower(clients, manifest)
+    cf = CloudFormationSignaller(clients, meta.instance_id)
+
 
     if manifest.valid:
         systemd = SystemdUnits(Manager())
