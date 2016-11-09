@@ -32,12 +32,32 @@ class TestLogging(unittest.TestCase):
         self.assertEquals(logging.INFO, level)
 
     @patch('spacel.log.watchtower')
-    def test_setup_watchtower_noop(self, watchtower):
+    @patch('spacel.log.open')
+    def test_setup_watchtower_noop(self, mock_open, watchtower):
         setup_watchtower(self.clients, self.manifest)
         watchtower.CloudWatchLogHandler.assert_not_called()
+        mock_open.assert_not_called()
 
     @patch('spacel.log.watchtower')
-    def test_setup_watchtower(self, watchtower):
+    def test_setup_watchtower_path(self, watchtower):
+        self.manifest.logging = {
+            'deploy': {
+                'group': 'path:test/open.test'
+            }
+        }
+        setup_watchtower(self.clients, self.manifest)
+        watchtower.CloudWatchLogHandler.assert_called_once_with(
+            log_group='test',
+            boto3_session=self.clients,
+            use_queues=ANY,
+            send_interval=ANY,
+            create_log_group=False,
+            stream_name='spacel'
+        )
+
+    @patch('spacel.log.watchtower')
+    @patch('spacel.log.open')
+    def test_setup_watchtower(self, mock_open, watchtower):
         self.manifest.logging = {
             'deploy': {
                 'group': LOG_GROUP,
@@ -53,3 +73,4 @@ class TestLogging(unittest.TestCase):
             create_log_group=False,
             stream_name='spacel'
         )
+        mock_open.assert_not_called()

@@ -1,5 +1,5 @@
 import logging
-
+import os
 import watchtower
 
 logger = logging.getLogger('spacel')
@@ -36,6 +36,12 @@ def setup_watchtower(clients, manifest):
         logger.debug('Deployment logging not configured.')
         return
     level = parse_level(deploy_logging.get('level'), DEFAULT_CWL_LEVEL)
+
+    if log_group.startswith('path:'):
+        log_group_path = log_group[5:]
+        if os.path.exists(log_group_path):
+            with open(log_group_path) as log_group_in:
+                log_group = log_group_in.read().strip()
 
     cwl = watchtower.CloudWatchLogHandler(
         log_group=log_group,
