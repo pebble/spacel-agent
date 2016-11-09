@@ -23,6 +23,10 @@ class TestLogging(unittest.TestCase):
         level = parse_level('meow', DEFAULT_CWL_LEVEL)
         self.assertEquals(DEFAULT_CWL_LEVEL, level)
 
+    def test_parse_level_case(self):
+        level = parse_level('warning', DEFAULT_CWL_LEVEL)
+        self.assertEquals(logging.WARNING, level)
+
     def test_parse_level(self):
         level = parse_level('INFO', DEFAULT_CWL_LEVEL)
         self.assertEquals(logging.INFO, level)

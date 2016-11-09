@@ -21,7 +21,7 @@ def parse_level(level_param, default_level):
     if not level_param:
         return default_level
 
-    parsed_level = logging.getLevelName(level_param)
+    parsed_level = logging.getLevelName(level_param.upper())
     if isinstance(parsed_level, int):
         return parsed_level
 
