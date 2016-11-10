@@ -1,6 +1,5 @@
 import logging
 import urllib2
-import sys
 from spacel.agent.healthcheck import BaseHealthCheck
 
 logger = logging.getLogger('spacel')
@@ -21,10 +20,16 @@ class InstanceManager(BaseHealthCheck):
         :return: Health status (boolean)
         """
         healthcheck = manifest.healthcheck
-        if not healthcheck.get('endpoint'):
+        endpoint = healthcheck.get('endpoint')
+        if not endpoint:
             return True
-
-        return self._check(healthcheck, self._check_health, healthcheck)
+        logger.info('Starting local health check to: %s', endpoint)
+        healthy = self._check(healthcheck, self._check_health, healthcheck)
+        if healthy:
+            logger.info('Local health check passed: %s', endpoint)
+        else:
+            logger.warning('Local health check failed: %s', endpoint)
+        return healthy
 
     @staticmethod
     def _check_health(healthcheck):
@@ -50,11 +55,6 @@ class InstanceManager(BaseHealthCheck):
             req.add_header('X-Forwarded-Proto', str(forwarded_protocol))
             resp = urllib2.urlopen(req)
             return resp.getcode() == 200
-
-        except urllib2.URLError as e:
-            logger.error(e.reason)
-            return False
         except Exception as e:
-            logger.info('Failed to execute healthcheck on "%s"', url)
-            logger.error(e.message)
+            logger.debug('Failed to execute healthcheck on "%s": %s', url, e)
             return False

@@ -1,6 +1,7 @@
 import logging
-import subprocess
 import os
+import subprocess
+import time
 
 logger = logging.getLogger('spacel.agent.systemd')
 
@@ -13,16 +14,20 @@ class SystemdUnits(object):
     def __init__(self, manager):
         self._manager = manager
 
-    def start_units(self, manifest):
+    def start_units(self, manifest, max_wait=300, poll_interval=0.5):
         """
         Start the services/timers in a manifest.
         :param manifest: Manifest.
+        :param max_wait: Time to wait for units to start (in seconds).
+        :param poll_interval: Time between polling unit status (in seconds).
         :return: None.
         """
         self._manager.reload()
         timers = self._get_timers(manifest)
+        waiting_units = {}
+        wait_start = time.time()
         for unit in self._get_units(manifest):
-            unit_id = unit.properties.Id
+            unit_id = str(unit.properties.Id)
 
             if unit.properties.ActiveState == 'active':
                 logger.debug('Service "%s" is already running.', unit_id)
@@ -34,12 +39,38 @@ class SystemdUnits(object):
                 continue
 
             try:
-                logger.debug('Starting "%s".', unit_id)
+                logger.info('Starting "%s".', unit_id)
                 unit.start('replace')
-                logger.debug('Started "%s".', unit_id)
+                waiting_units[unit_id] = time.time()
             except:
-                logger.warn('Error starting "%s".', unit_id, exc_info=True)
+                logger.warn('Error starting "%s".', unit_id)
                 return False
+
+        while waiting_units:
+            for unit_name, unit_start in list(waiting_units.items()):
+                unit = self._manager.get_unit(unit_name)
+                unit_props = unit.properties
+
+                # Dump info to debug:
+                logger.debug('Service "%s" is: %s/%s', unit_name,
+                             unit_props.ActiveState, unit_props.SubState)
+
+                # Remove if completed:
+                if unit_props.ActiveState == 'active':
+                    duration = round(time.time() - unit_start, 2)
+                    logger.info('Started "%s" in %ss.', unit_name, duration)
+                    del waiting_units[unit_name]
+                elif unit_props.ActiveState == 'failed':
+                    logger.error('Unit "%s" failed to start.', unit_name)
+                    return False
+
+            if waiting_units:
+                if (time.time() - wait_start) > max_wait:
+                    logger.error('Units failed to start after %ss: %s',
+                                 max_wait, ', '.join(sorted(waiting_units.keys())))
+                    return False
+                else:
+                    time.sleep(poll_interval)
 
         return True
 
@@ -58,16 +89,17 @@ class SystemdUnits(object):
                 logger.warn('Error stopping "%s".', unit_id, exc_info=True)
 
     @staticmethod
-    def log_units(manifest):
+    def log_units(manifest, level=logging.INFO):
         """
         Log `systemctl status` for each service/timer in a manifest.
         :param manifest: Manifest.
+        :param level: Log level for status(es).
         :return: None
         """
         for unit in manifest.systemd.keys():
             status_cmd = 'systemctl status -l --no-pager %s || exit 0' % unit
             status = subprocess.check_output(status_cmd, shell=True)
-            logger.info('Systemd status:\n%s', status)
+            logger.log(level, 'Systemd status:\n%s', status)
 
     def _get_units(self, manifest):
         manifest_units = set(manifest.systemd.keys())

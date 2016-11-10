@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-from spacel.cli import cli
 import sys
+
+from spacel.cli import cli
 
 if __name__ == '__main__':  # pragma: no cover
     if len(sys.argv) == 1:

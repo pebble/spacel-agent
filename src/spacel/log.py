@@ -29,7 +29,7 @@ def parse_level(level_param, default_level):
     return default_level
 
 
-def setup_watchtower(clients, manifest):
+def setup_watchtower(clients, meta, manifest):
     deploy_logging = manifest.logging.get('deploy', {})
     log_group = deploy_logging.get('group')
     if not log_group:
@@ -49,7 +49,7 @@ def setup_watchtower(clients, manifest):
         use_queues=True,
         send_interval=2,
         create_log_group=False,
-        stream_name='spacel'
+        stream_name=meta.instance_id
     )
     cwl.setLevel(level)
     logging.getLogger('spacel').addHandler(cwl)

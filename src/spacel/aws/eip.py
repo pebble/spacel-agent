@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger('spacel')
@@ -57,9 +58,9 @@ class ElasticIpBinder(object):
         for eip_id in unassociated:
             try:
                 associate_response = ec2.associate_address(
-                        InstanceId=self._instance_id,
-                        AllocationId=eip_id,
-                        AllowReassociation=reassociate)
+                    InstanceId=self._instance_id,
+                    AllocationId=eip_id,
+                    AllowReassociation=reassociate)
                 if associate_response['AssociationId']:
                     logger.debug('Associated "%s".', eip_id)
                     return True
@@ -122,7 +123,7 @@ class ElasticIpBinder(object):
         # There are multiple LCs, sort by age:
         autoscaling = self._clients.autoscaling()
         lc_desc = autoscaling.describe_launch_configurations(
-                LaunchConfigurationNames=instance_lcs.keys())
+            LaunchConfigurationNames=instance_lcs.keys())
         lc_desc = lc_desc.get('LaunchConfigurations', ())
         lc_by_age = [lc['LaunchConfigurationName'] for lc in
                      sorted(lc_desc, key=lambda x: x['CreatedTime'])]

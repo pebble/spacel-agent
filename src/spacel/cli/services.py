@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -41,15 +42,14 @@ def start_services():
     meta = AwsMeta()
     clients = ClientCache(meta.region)
     manifest = AgentManifest(meta.user_data)
-    setup_watchtower(clients, manifest)
+    setup_watchtower(clients, meta, manifest)
     cf = CloudFormationSignaller(clients, meta.instance_id)
-
 
     if manifest.valid:
         systemd = SystemdUnits(Manager())
         status = process_manifest(clients, meta, systemd, manifest)
         if not status:
-            systemd.log_units(manifest)
+            systemd.log_units(manifest, level=logging.WARNING)
     else:
         status = False
 
@@ -83,9 +83,9 @@ def process_manifest(clients, meta, systemd, manifest):
     if not systemd.start_units(manifest):
         return False
 
-    if not elb.health(manifest):
-        return False
     if not instance.health(manifest):
+        return False
+    if not elb.health(manifest):
         return False
 
     return True
