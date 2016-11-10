@@ -74,6 +74,16 @@ class TestSystemdUnits(unittest.TestCase):
         self.assertFalse(self.systemd.start_units(self.manifest, max_wait=0.02,
                                                   poll_interval=0.0001))
 
+    def test_start_units_failure(self):
+        self.systemd._get_units = MagicMock(return_value=[self.unit])
+        failed_unit = MagicMock()
+        failed_unit.properties.ActiveState = 'failed'
+        self.manager.get_unit.return_value = failed_unit
+
+        self.assertFalse(self.systemd.start_units(self.manifest))
+
+        self.assertEquals(1, self.manager.get_unit.call_count)
+
     def test_stop_units(self):
         self.systemd._get_units = MagicMock(return_value=[self.unit])
         self.systemd.stop_units(self.manifest)

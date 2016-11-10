@@ -60,6 +60,9 @@ class SystemdUnits(object):
                     duration = round(time.time() - unit_start, 2)
                     logger.info('Started "%s" in %ss.', unit_name, duration)
                     del waiting_units[unit_name]
+                elif unit_props.ActiveState == 'failed':
+                    logger.error('Unit "%s" failed to start.', unit_name)
+                    return False
 
             if waiting_units:
                 if (time.time() - wait_start) > max_wait:
