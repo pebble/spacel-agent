@@ -43,7 +43,7 @@ class SystemdUnits(object):
                 unit.start('replace')
                 waiting_units[unit_id] = time.time()
             except:
-                logger.warn('Error starting "%s".', unit_id, exc_info=True)
+                logger.warn('Error starting "%s".', unit_id)
                 return False
 
         while waiting_units:
@@ -86,16 +86,17 @@ class SystemdUnits(object):
                 logger.warn('Error stopping "%s".', unit_id, exc_info=True)
 
     @staticmethod
-    def log_units(manifest):
+    def log_units(manifest, level=logging.INFO):
         """
         Log `systemctl status` for each service/timer in a manifest.
         :param manifest: Manifest.
+        :param level: Log level for status(es).
         :return: None
         """
         for unit in manifest.systemd.keys():
             status_cmd = 'systemctl status -l --no-pager %s || exit 0' % unit
             status = subprocess.check_output(status_cmd, shell=True)
-            logger.info('Systemd status:\n%s', status)
+            logger.log(level, 'Systemd status:\n%s', status)
 
     def _get_units(self, manifest):
         manifest_units = set(manifest.systemd.keys())
