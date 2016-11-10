@@ -3,16 +3,19 @@ import unittest
 
 from mock import MagicMock, patch, ANY
 
-from spacel.aws import ClientCache
+from spacel.aws import ClientCache, AwsMeta
 from spacel.log import parse_level, setup_watchtower, DEFAULT_CWL_LEVEL
 from spacel.model import AgentManifest
 
 LOG_GROUP = 'test-log-group'
+INSTANCE_ID = 'i-123456789012'
 
 
 class TestLogging(unittest.TestCase):
     def setUp(self):
         self.clients = MagicMock(spec=ClientCache)
+        self.meta = MagicMock(spec=AwsMeta)
+        self.meta.instance_id = INSTANCE_ID
         self.manifest = AgentManifest({})
 
     def test_parse_level_not_found(self):
@@ -34,7 +37,7 @@ class TestLogging(unittest.TestCase):
     @patch('spacel.log.watchtower')
     @patch('spacel.log.open')
     def test_setup_watchtower_noop(self, mock_open, watchtower):
-        setup_watchtower(self.clients, self.manifest)
+        setup_watchtower(self.clients, self.meta, self.manifest)
         watchtower.CloudWatchLogHandler.assert_not_called()
         mock_open.assert_not_called()
 
@@ -45,14 +48,14 @@ class TestLogging(unittest.TestCase):
                 'group': 'path:test/open.test'
             }
         }
-        setup_watchtower(self.clients, self.manifest)
+        setup_watchtower(self.clients, self.meta, self.manifest)
         watchtower.CloudWatchLogHandler.assert_called_once_with(
             log_group='test',
             boto3_session=self.clients,
             use_queues=ANY,
             send_interval=ANY,
             create_log_group=False,
-            stream_name='spacel'
+            stream_name=INSTANCE_ID
         )
 
     @patch('spacel.log.watchtower')
@@ -64,13 +67,13 @@ class TestLogging(unittest.TestCase):
                 'level': 'DEBUG'
             }
         }
-        setup_watchtower(self.clients, self.manifest)
+        setup_watchtower(self.clients, self.meta, self.manifest)
         watchtower.CloudWatchLogHandler.assert_called_once_with(
             log_group=LOG_GROUP,
             boto3_session=self.clients,
             use_queues=ANY,
             send_interval=ANY,
             create_log_group=False,
-            stream_name='spacel'
+            stream_name=INSTANCE_ID
         )
         mock_open.assert_not_called()

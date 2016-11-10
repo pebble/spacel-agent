@@ -41,9 +41,8 @@ def start_services():
     meta = AwsMeta()
     clients = ClientCache(meta.region)
     manifest = AgentManifest(meta.user_data)
-    setup_watchtower(clients, manifest)
+    setup_watchtower(clients, meta, manifest)
     cf = CloudFormationSignaller(clients, meta.instance_id)
-
 
     if manifest.valid:
         systemd = SystemdUnits(Manager())
