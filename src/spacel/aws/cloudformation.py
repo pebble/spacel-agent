@@ -1,5 +1,7 @@
 import logging
+
 from botocore.exceptions import ClientError
+
 from spacel.aws.helpers import read_file
 
 logger = logging.getLogger('spacel')
@@ -27,14 +29,14 @@ class CloudFormationSignaller(object):
                 logger.debug('CFN: Stack/Resource ID not found!')
                 return
 
-            logger.debug('Signalling %s in %s (%s).', cf_resource_id, cf_stack,
-                         self._instance_id)
+            logger.debug('Signalling %s in %s (%s): %s', cf_resource_id,
+                         cf_stack, self._instance_id, status)
             try:
                 cloudformation.signal_resource(
-                        StackName=cf_stack,
-                        LogicalResourceId=cf_resource_id,
-                        UniqueId=self._instance_id,
-                        Status=status)
+                    StackName=cf_stack,
+                    LogicalResourceId=cf_resource_id,
+                    UniqueId=self._instance_id,
+                    Status=status)
             except ClientError as e:
                 logger.debug('Could not signal CloudFormation!')
                 if e.response['Error']['Code'] != 'ValidationError':

@@ -1,7 +1,9 @@
 import unittest
+
 from mock import MagicMock, call, patch
-from spacel.model import AgentManifest
+
 from spacel.agent.systemd import SystemdUnits
+from spacel.model import AgentManifest
 
 INSTANCE_ID = 'i-123456'
 SYSTEMD_SERVICE = 'foo.service'
@@ -31,6 +33,9 @@ class TestSystemdUnits(unittest.TestCase):
 
     def test_start_units(self):
         self.systemd._get_units = MagicMock(return_value=[self.unit])
+        started_unit = MagicMock()
+        started_unit.properties.ActiveState = 'active'
+        self.manager.get_unit.return_value = started_unit
 
         self.assertEqual(self.systemd.start_units(self.manifest), True)
         self.unit.start.assert_called_with('replace')
@@ -52,11 +57,22 @@ class TestSystemdUnits(unittest.TestCase):
         self.systemd._get_units = MagicMock(return_value=[self.unit,
                                                           self.timer_service,
                                                           self.timer_name])
+        started_unit = MagicMock()
+        started_unit.properties.ActiveState = 'active'
+        self.manager.get_unit.return_value = started_unit
 
         self.assertEqual(self.systemd.start_units(self.manifest), True)
 
         self.timer_service.start.assert_not_called()
         self.timer_name.start.assert_called_with('replace')
+
+    def test_start_units_timeout(self):
+        self.systemd._get_units = MagicMock(return_value=[self.unit])
+        stalled_unit = MagicMock()
+        self.manager.get_unit.return_value = stalled_unit
+
+        self.assertFalse(self.systemd.start_units(self.manifest, max_wait=0.02,
+                                                  poll_interval=0.0001))
 
     def test_stop_units(self):
         self.systemd._get_units = MagicMock(return_value=[self.unit])
@@ -99,7 +115,7 @@ class TestSystemdUnits(unittest.TestCase):
 
     def test_get_timers(self):
         timers = self.systemd._get_timers(self.manifest)
-        self.assertEqual(set(['bar']), timers)
+        self.assertEqual({'bar'}, timers)
 
     @patch('spacel.agent.systemd.subprocess')
     def test_log_units(self, mock_subprocess):

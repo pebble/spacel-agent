@@ -1,5 +1,6 @@
-from botocore.exceptions import ClientError
 import logging
+
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger('spacel')
 
@@ -15,6 +16,7 @@ class VolumeDb(object):
         self._instance_id = meta.instance_id
         self._az = meta.az
         self._table_name = '%s-volumes' % meta.orbit
+
 
     def get_assignment(self, volume):
         """
@@ -51,7 +53,6 @@ class VolumeDb(object):
                 return new_item
             except ClientError:  # pragma: no cover
                 logger.warn('Unable to create volume record %d.', volume_index)
-                pass
 
         # Look for orphaned volumes:
         instance_ids = attached_volumes.keys()
@@ -112,11 +113,11 @@ class VolumeDb(object):
 
         logger.debug('Updating item %s', volume_key)
         self._dynamo.update_item(
-                TableName=self._table_name,
-                Key=volume_key,
-                UpdateExpression=update_expression,
-                ExpressionAttributeValues=update_values,
-                ConditionExpression='assignment = :instance_id')
+            TableName=self._table_name,
+            Key=volume_key,
+            UpdateExpression=update_expression,
+            ExpressionAttributeValues=update_values,
+            ConditionExpression='assignment = :instance_id')
 
     def _get_volume_items(self, volume):
         volume_keys = [self._volume_key(volume.label, index)
@@ -130,21 +131,21 @@ class VolumeDb(object):
         new_item['assignment'] = {'S': self._instance_id}
         new_item['az'] = {'S': self._az}
         self._dynamo.put_item(
-                TableName=self._table_name,
-                Item=new_item,
-                ConditionExpression='attribute_not_exists(service)')
+            TableName=self._table_name,
+            Item=new_item,
+            ConditionExpression='attribute_not_exists(service)')
         return new_item
 
     def _assign_volume(self, volume, volume_index, old_instance_id):
         self._dynamo.update_item(
-                TableName=self._table_name,
-                Key=self._volume_key(volume.label, volume_index),
-                UpdateExpression='SET assignment = :instance_id',
-                ConditionExpression='assignment = :old_instance',
-                ExpressionAttributeValues={
-                    ':instance_id': {'S': self._instance_id},
-                    ':old_instance': {'S': old_instance_id}
-                })
+            TableName=self._table_name,
+            Key=self._volume_key(volume.label, volume_index),
+            UpdateExpression='SET assignment = :instance_id',
+            ConditionExpression='assignment = :old_instance',
+            ExpressionAttributeValues={
+                ':instance_id': {'S': self._instance_id},
+                ':old_instance': {'S': old_instance_id}
+            })
 
     @staticmethod
     def _volume_key(label, index):

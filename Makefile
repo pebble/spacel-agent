@@ -19,6 +19,11 @@ build/venv/bin/activate: requirements.txt
 		pip install -r src/test/requirements.txt; \
 	)
 
+lint: build/venv
+	@( . build/venv/bin/activate; \
+		find src -not -path 'src/test*' -name '*.py' | xargs pylint --rcfile pylintrc \
+	)
+
 composetest:
 	-docker-compose kill
 	-docker-compose rm -f

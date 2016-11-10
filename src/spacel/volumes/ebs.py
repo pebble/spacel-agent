@@ -1,7 +1,8 @@
-from botocore.exceptions import ClientError
 import logging
-from subprocess import check_output, CalledProcessError, STDOUT
 import time
+from subprocess import check_output, CalledProcessError, STDOUT
+
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger('spacel')
 
@@ -63,7 +64,7 @@ class EbsAttachment(object):
                 volume_item['snapshot_id'] = {'S': snapshot_id}
 
                 self._ec2.get_waiter('snapshot_completed').wait(
-                        SnapshotIds=[snapshot_id])
+                    SnapshotIds=[snapshot_id])
                 logger.debug('Snapshot %s completed', snapshot_id)
                 self._ec2.delete_volume(VolumeId=volume_id)
 
@@ -99,7 +100,7 @@ class EbsAttachment(object):
     def _describe_volume(self, volume_id):
         try:
             return self._ec2.describe_volumes(
-                    VolumeIds=[volume_id])['Volumes'][0]
+                VolumeIds=[volume_id])['Volumes'][0]
         except ClientError as e:
             if e.response['Error']['Code'] != 'InvalidVolume.NotFound':
                 raise e
@@ -111,9 +112,9 @@ class EbsAttachment(object):
             volume_id = volume_item['volume_id']['S']
             logger.debug('Attaching %s to %s.', volume_id, device)
             self._ec2.attach_volume(
-                    InstanceId=self._instance_id,
-                    VolumeId=volume_id,
-                    Device=device)
+                InstanceId=self._instance_id,
+                VolumeId=volume_id,
+                Device=device)
             volume_item['device'] = {'S': device}
         except ClientError as e:  # pragma: no cover
             if e.response['Error']['Code'] != 'VolumeInUse':
@@ -122,7 +123,7 @@ class EbsAttachment(object):
         # Wait for block device to settle:
         for _ in range(300):
             try:
-                blk = check_output(['/bin/lsblk', '-Pf', device], stderr=STDOUT)
+                check_output(['/bin/lsblk', '-Pf', device], stderr=STDOUT)
                 break
             except CalledProcessError:  # pragma: no cover
                 time.sleep(0.1)

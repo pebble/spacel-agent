@@ -1,6 +1,5 @@
 import logging
 import urllib2
-import sys
 from spacel.agent.healthcheck import BaseHealthCheck
 
 logger = logging.getLogger('spacel')

@@ -1,5 +1,6 @@
-from botocore.exceptions import ClientError
 import logging
+
+from botocore.exceptions import ClientError
 
 from spacel.agent.healthcheck import BaseHealthCheck
 from spacel.aws.helpers import read_file
@@ -45,7 +46,6 @@ class ElbHealthCheck(BaseHealthCheck):
             if 'Could not find EC2 instance' in e_message:
                 # This happens when the instance was never registered to the ELB
                 return self._register_instance_elb(elb)
-            pass
         return False
 
     def _register_instance_elb(self, elb):

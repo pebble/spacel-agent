@@ -1,5 +1,6 @@
-import click
 import logging
+
+import click
 
 from spacel.aws import AwsMeta, ClientCache
 from spacel.log import setup_logging
