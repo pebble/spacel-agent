@@ -14,7 +14,7 @@ class SystemdUnits(object):
     def __init__(self, manager):
         self._manager = manager
 
-    def start_units(self, manifest, max_wait=60, poll_interval=0.5):
+    def start_units(self, manifest, max_wait=300, poll_interval=0.5):
         """
         Start the services/timers in a manifest.
         :param manifest: Manifest.
@@ -64,7 +64,7 @@ class SystemdUnits(object):
             if waiting_units:
                 if (time.time() - wait_start) > max_wait:
                     logger.error('Units failed to start after %ss: %s',
-                                 max_wait, sorted(waiting_units.keys()))
+                                 max_wait, ', '.join(sorted(waiting_units.keys())))
                     return False
                 else:
                     time.sleep(poll_interval)
