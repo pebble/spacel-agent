@@ -1,5 +1,5 @@
-from base64 import b64decode
 import json
+from base64 import b64decode, b64encode
 
 
 class EncryptedPayload(object):
@@ -10,9 +10,21 @@ class EncryptedPayload(object):
         self.key_region = key_region
         self.encoding = encoding
 
+    def json(self):
+        return json.dumps({
+            'iv': b64encode(self.iv),
+            'key': b64encode(self.key),
+            'key_region': self.key_region,
+            'ciphertext': b64encode(self.ciphertext),
+            'encoding': self.encoding,
+        }, sort_keys=True)
+
     @staticmethod
     def from_json(json_string):
-        json_obj = json.loads(json_string)
+        try:
+            json_obj = json.loads(json_string)
+        except ValueError:
+            return None
         return EncryptedPayload.from_obj(json_obj)
 
     @staticmethod
