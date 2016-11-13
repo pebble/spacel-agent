@@ -1,24 +1,47 @@
 import logging
 
+from spacel.security import EncryptedPayload
+
 logger = logging.getLogger('spacel')
 
 
 class ApplicationEnvironment(object):
-    def __init__(self, clients):
+    def __init__(self, clients, kms):
         self._clients = clients
+        self._kms = kms
 
-    @staticmethod
-    def environment(base_env, common_env):
+    def environment(self, base_env, common_env):
         env = common_env.copy()
         for base_line in base_env.split('\n'):
             if '=' not in base_line:
                 continue
             key, value = base_line.split('=', 1)
-            env[key] = value
+            env[key] = self._decrypt(key, value)
         env.update(common_env)
-        # TODO: decrypt individual keys?
+
         return '\n'.join('%s=%s' % (key, value)
                          for key, value in sorted(env.items()))
+
+    def _decrypt(self, key, value):
+        """
+        Decrypt value (if it is a JSON-encoded EncryptedPayload)
+        :param key: Environment key.
+        :param value: Value.
+        :return: Decrypted payload; original value on error.
+        """
+        payload = EncryptedPayload.from_json(value)
+        if not payload:
+            return value
+
+        decrypted = self._kms.decrypt_payload(payload)
+        if not decrypted:
+            return value
+
+        key_prefix = '%s=' % key
+        if not decrypted.startswith(key_prefix):
+            return value
+
+        return decrypted[len(key_prefix):]
 
     def common_environment(self, manifest):
         """

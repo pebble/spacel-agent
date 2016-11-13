@@ -1,8 +1,12 @@
 import unittest
 
 from mock import MagicMock, ANY
-from spacel.aws import ClientCache
+
 from spacel.agent.environment import ApplicationEnvironment
+from spacel.aws import ClientCache, KmsCrypto
+from test.security import PAYLOAD
+
+CIPHER_ENV = 'FOO=%s' % PAYLOAD.json()
 
 
 class TestApplicationEnvironment(unittest.TestCase):
@@ -10,13 +14,34 @@ class TestApplicationEnvironment(unittest.TestCase):
         self.elasticache = MagicMock()
         self.clients = MagicMock(spec=ClientCache)
         self.clients.elasticache.return_value = self.elasticache
+        self.kms = MagicMock(spec=KmsCrypto)
         self.manifest = MagicMock()
-        self.app_env = ApplicationEnvironment(self.clients)
+        self.app_env = ApplicationEnvironment(self.clients, self.kms)
 
     def test_environment(self):
         environment = self.app_env.environment('FOO=bar\n', {'BING': 'baz'})
         self.assertEquals('''BING=baz
 FOO=bar''', environment)
+
+    def test_environment_crypt_key_invalid_decrypt(self):
+        self.kms.decrypt_payload.return_value = None
+        environment = self.app_env.environment(CIPHER_ENV, {})
+        self.assertEquals(CIPHER_ENV, environment)
+
+    def test_environment_crypt_key_wrong_key(self):
+        """
+        Verify decrypted env entries start with the entry key.
+        This defends against copying a secret value to a key that's exposed
+        (i.e. `PASSWORD`->`APP_VERSION`)
+        """
+        self.kms.decrypt_payload.return_value = 'BAR=decrypted'
+        environment = self.app_env.environment(CIPHER_ENV, {})
+        self.assertEquals(CIPHER_ENV, environment)
+
+    def test_environment_crypt_key(self):
+        self.kms.decrypt_payload.return_value = 'FOO=decrypted'
+        environment = self.app_env.environment(CIPHER_ENV, {})
+        self.assertEquals('FOO=decrypted', environment)
 
     def test_common_environment(self):
         self.app_env._caches = MagicMock()
