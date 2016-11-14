@@ -63,7 +63,7 @@ def start_services():
 def process_manifest(clients, meta, systemd, manifest):
     # Dependency injection party!
     kms = KmsCrypto(clients)
-    app_env = ApplicationEnvironment(clients, kms)
+    app_env = ApplicationEnvironment(clients, meta, kms)
     file_writer = FileWriter(app_env, kms)
     instance = InstanceManager()
     eip = ElasticIpBinder(clients, meta)

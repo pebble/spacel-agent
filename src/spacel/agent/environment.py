@@ -6,9 +6,10 @@ logger = logging.getLogger('spacel')
 
 
 class ApplicationEnvironment(object):
-    def __init__(self, clients, kms):
+    def __init__(self, clients, meta, kms_crypto):
         self._clients = clients
-        self._kms = kms
+        self._region = meta.region
+        self._kms_crypto = kms_crypto
 
     def environment(self, base_env, common_env):
         env = common_env.copy()
@@ -33,7 +34,7 @@ class ApplicationEnvironment(object):
         if not payload:
             return value
 
-        decrypted = self._kms.decrypt_payload(payload)
+        decrypted = self._kms_crypto.decrypt_payload(payload)
         if not decrypted:
             return value
 
@@ -51,6 +52,7 @@ class ApplicationEnvironment(object):
         """
         env = {}
         self._caches(manifest, env)
+        self._databases(manifest, env)
         return env
 
     def _caches(self, manifest, env):
@@ -76,3 +78,42 @@ class ApplicationEnvironment(object):
     @staticmethod
     def _redis_url(node):
         return 'redis://%s:%s' % (node['Address'], node['Port'])
+
+    def _databases(self, manifest, env):
+        for name, db_params in manifest.databases.items():
+            db_name = db_params['name']
+            db_region = db_params.get('region', self._region)
+
+            rds = self._clients.rds(db_region)
+            db_instances = (rds.describe_db_instances(
+                DBInstanceIdentifier=db_name
+            )['DBInstances'])
+
+            if not db_instances:
+                logger.warning('Database instance %s (%s) not found.',
+                               db_name, name)
+                continue
+            db_instances = db_instances[0]
+
+            db_username = db_instances['MasterUsername']
+            db_password = db_params.get('password', '')
+            if 'ciphertext' in db_password:
+                payload = EncryptedPayload.from_obj(db_password)
+                if payload:
+                    db_password = self._kms_crypto.decrypt_payload(payload)
+
+            db_name = db_instances['DBName']
+            db_endpoint = db_instances['Endpoint']
+            db_hostname = db_endpoint['Address']
+            db_port = db_endpoint['Port']
+            db_url = 'postgres://%s:%s@%s:%s/%s' % (db_username, db_password,
+                                                    db_hostname, db_port,
+                                                    db_name)
+
+            name = name.upper()
+            env['%s_USERNAME' % name] = db_username
+            env['%s_PASSWORD' % name] = db_password
+            env['%s_HOSTNAME' % name] = db_hostname
+            env['%s_PORT' % name] = db_port
+            env['%s_DATABASE' % name] = db_name
+            env['%s_URL' % name] = db_url
