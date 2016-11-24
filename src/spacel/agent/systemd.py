@@ -67,7 +67,8 @@ class SystemdUnits(object):
             if waiting_units:
                 if (time.time() - wait_start) > max_wait:
                     logger.error('Units failed to start after %ss: %s',
-                                 max_wait, ', '.join(sorted(waiting_units.keys())))
+                                 max_wait,
+                                 ', '.join(sorted(waiting_units.keys())))
                     return False
                 else:
                     time.sleep(poll_interval)
@@ -128,3 +129,11 @@ class SystemdUnits(object):
             if ext == '.timer':
                 timers.add(name)
         return timers
+
+    def start(self, unit_name):
+        self._manager.reload()
+        self._manager.start_unit(unit_name, 'replace')
+
+    def restart(self, unit_name):
+        self._manager.reload()
+        self._manager.restart_unit(unit_name, 'replace')
