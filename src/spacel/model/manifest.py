@@ -1,4 +1,5 @@
 import logging
+
 from spacel.model.volume import SpaceVolume
 
 logger = logging.getLogger('spacel')
@@ -21,6 +22,7 @@ class AgentManifest(object):
         self.caches = params.get('caches', {})
         self.logging = params.get('logging', {})
         self.databases = params.get('databases', {})
+        self.stats = params.get('stats', False)
 
     @property
     def all_files(self):
