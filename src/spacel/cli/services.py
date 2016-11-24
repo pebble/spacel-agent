@@ -7,7 +7,7 @@ import click
 from spacel.agent import (ApplicationEnvironment, FileWriter, SystemdUnits,
                           InstanceManager)
 from spacel.aws import (AwsMeta, ClientCache, CloudFormationSignaller,
-                        ElbHealthCheck, ElasticIpBinder, KmsCrypto, TagWriter)
+                        ElbHealthCheck, ElasticIpBinder, KmsCrypto, InstanceTags)
 from spacel.log import setup_logging, setup_watchtower
 from spacel.model import AgentManifest
 from spacel.volumes import VolumeBinder
@@ -69,7 +69,7 @@ def process_manifest(clients, meta, systemd, manifest):
     eip = ElasticIpBinder(clients, meta)
     ebs = VolumeBinder(clients, meta)
     elb = ElbHealthCheck(clients, meta)
-    tag = TagWriter(clients, meta)
+    tag = InstanceTags(clients, meta)
 
     # Act on manifest:
     tag.update(manifest)
