@@ -11,10 +11,6 @@ class SetupCloudWatchLogs(BaseMixinWriter):
         self._meta = meta
 
     def logs(self, manifest):
-        self._docker_logs(manifest)
-        # TODO: self._journald_logs ?
-
-    def _docker_logs(self, manifest):
         docker_logging = manifest.logging.get('docker', {})
         log_group = docker_logging.get('group')
         if not log_group:
@@ -27,4 +23,5 @@ class SetupCloudWatchLogs(BaseMixinWriter):
                             ' --log-opt awslogs-group=%s' % log_group)
         })
 
+        logger.debug('Restarting docker.service with CW:L log driver.')
         self._systemd.restart('docker.service')
