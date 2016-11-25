@@ -6,8 +6,10 @@ import click
 
 from spacel.agent import (ApplicationEnvironment, FileWriter, SystemdUnits,
                           InstanceManager)
+from spacel.agent.mixin import SetupCloudWatchLogs, SetupCloudWatchStats
 from spacel.aws import (AwsMeta, ClientCache, CloudFormationSignaller,
-                        ElbHealthCheck, ElasticIpBinder, KmsCrypto, TagWriter)
+                        ElbHealthCheck, ElasticIpBinder, KmsCrypto,
+                        InstanceTags)
 from spacel.log import setup_logging, setup_watchtower
 from spacel.model import AgentManifest
 from spacel.volumes import VolumeBinder
@@ -69,7 +71,10 @@ def process_manifest(clients, meta, systemd, manifest):
     eip = ElasticIpBinder(clients, meta)
     ebs = VolumeBinder(clients, meta)
     elb = ElbHealthCheck(clients, meta)
-    tag = TagWriter(clients, meta)
+    tag = InstanceTags(clients, meta)
+
+    cw_logs = SetupCloudWatchLogs(systemd, meta)
+    cw_stats = SetupCloudWatchStats(systemd, tag)
 
     # Act on manifest:
     tag.update(manifest)
@@ -78,6 +83,9 @@ def process_manifest(clients, meta, systemd, manifest):
         # TODO: fail if attaching any volume fails.
     if not eip.assign_from(manifest):
         return False
+
+    cw_logs.logs(manifest)
+    cw_stats.stats(manifest)
 
     file_writer.write_files(manifest)
     if not systemd.start_units(manifest):

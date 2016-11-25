@@ -139,22 +139,6 @@ class ElasticIpBinder(object):
         for older_lc in lc_by_age[:index_of_own]:
             for potential_victim in instance_lcs[older_lc]:
                 if potential_victim != own_id:
+                    logger.debug('Stealing EIP from %s, old LC.',
+                                 potential_victim)
                     return potential_victim
-
-        logger.debug('Stealing EIP from %s, old LC.', victim_instance)
-
-        # TODO:
-
-
-if __name__ == '__main__':
-    from spacel.aws import ClientCache
-
-    c = ClientCache('us-east-1')
-    eip = ElasticIpBinder(c)
-
-    eips = {
-        'eipalloc-03e78865': 'i-037f8a6bcf9ddd868',
-        'eipalloc-9794fbf1': 'i-0242ddb261efd1a43'
-    }
-    v = eip._victim('i-090cb55627eeb1052', eips)
-    print(v)

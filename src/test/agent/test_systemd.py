@@ -132,3 +132,16 @@ class TestSystemdUnits(unittest.TestCase):
         self.systemd.log_units(self.manifest)
 
         self.assertEquals(3, mock_subprocess.check_output.call_count)
+
+    def test_start(self):
+        self.systemd.start('test.service')
+        self.manager.reload.assert_called_once_with()
+        self.manager.start_unit.assert_called_once_with('test.service',
+                                                        'replace')
+
+    def test_restart(self):
+        self.systemd.restart('test.service')
+
+        self.manager.reload.assert_called_once_with()
+        self.manager.restart_unit.assert_called_once_with('test.service',
+                                                           'replace')
