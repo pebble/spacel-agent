@@ -11,7 +11,7 @@ from spacel.aws import (AwsMeta, ClientCache, CloudFormationSignaller,
                         ElbHealthCheck, ElasticIpBinder, KmsCrypto,
                         InstanceTags)
 from spacel.log import setup_logging, setup_watchtower
-from spacel.model import AgentManifest
+from spacel.model import AgentManifestFactory
 from spacel.volumes import VolumeBinder
 
 try:
@@ -43,13 +43,15 @@ def start_services():
     # Get context:
     meta = AwsMeta()
     clients = ClientCache(meta.region)
-    manifest = AgentManifest(meta.user_data)
+    kms = KmsCrypto(clients)
+    manifest_factory = AgentManifestFactory(kms)
+    manifest = manifest_factory.manifest(meta.user_data)
     setup_watchtower(clients, meta, manifest)
     cf = CloudFormationSignaller(clients, meta.instance_id)
 
     if manifest.valid:
         systemd = SystemdUnits(Manager())
-        status = process_manifest(clients, meta, systemd, manifest)
+        status = process_manifest(clients, meta, systemd, kms, manifest)
         if not status:
             systemd.log_units(manifest, level=logging.WARNING)
     else:
@@ -62,9 +64,8 @@ def start_services():
         sys.exit(1)
 
 
-def process_manifest(clients, meta, systemd, manifest):
+def process_manifest(clients, meta, systemd, kms, manifest):
     # Dependency injection party!
-    kms = KmsCrypto(clients)
     app_env = ApplicationEnvironment(clients, meta, kms)
     file_writer = FileWriter(app_env, kms)
     instance = InstanceManager()
