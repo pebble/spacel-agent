@@ -6,7 +6,8 @@ logger = logging.getLogger('spacel')
 
 
 class AgentManifest(object):
-    def __init__(self, params={}):
+    def __init__(self, params=None):
+        params = params or {}
         self.eips = params.get('eips', ())
         self.files = params.get('files', {})
         self.systemd = params.get('systemd', {})
